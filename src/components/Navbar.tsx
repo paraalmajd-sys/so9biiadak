@@ -39,6 +39,7 @@ interface NavbarProps {
   onClearNotifications: () => void;
   onSelectNotification: (notif: SellerNotification) => void;
   onSwitchRole: () => void;
+  onSelectRole?: (role: 'buyer' | 'merchant') => void;
   onOpenSettings: () => void;
 }
 
@@ -59,6 +60,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onClearNotifications,
   onSelectNotification,
   onSwitchRole,
+  onSelectRole,
   onOpenSettings,
 }) => {
   const { t, language, setLanguage, currentLangInfo, isRtl } = useLanguage();
@@ -329,6 +331,39 @@ export const Navbar: React.FC<NavbarProps> = ({
               />
             </div>
 
+            {/* Dual Account Switcher: Buyer vs Merchant */}
+            <div className="flex items-center p-0.5 bg-slate-100 rounded-xl border border-slate-200 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => (onSelectRole ? onSelectRole('buyer') : onSwitchRole())}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                  !isMerchant
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                }`}
+                title="تفعيل حساب الزبون / المشتري (للتسوق والطلبيات)"
+              >
+                <User className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">{isRtl ? 'حساب الزبون' : 'Client'}</span>
+                <span className="md:hidden">{isRtl ? 'زبون' : 'Client'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => (onSelectRole ? onSelectRole('merchant') : onSwitchRole())}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                  isMerchant
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                }`}
+                title="تفعيل حساب التاجر / البائع (للإعلانات والمبيعات)"
+              >
+                <Store className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">{isRtl ? 'حساب التاجر' : 'Vendeur'}</span>
+                <span className="md:hidden">{isRtl ? 'تاجر' : 'Vendeur'}</span>
+              </button>
+            </div>
+
             {/* User Account Capsule */}
             {currentUser && currentUser.isLoggedIn ? (
               <div className="flex items-center gap-1.5 p-1 pr-2 bg-slate-100 hover:bg-slate-200/80 rounded-full transition-colors">
@@ -343,7 +378,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className="w-7 h-7 rounded-full object-cover border border-slate-200"
                     referrerPolicy="no-referrer"
                   />
-                  <div className={`hidden sm:block leading-tight ${isRtl ? 'text-right' : 'text-left'}`}>
+                  <div className={`hidden lg:block leading-tight ${isRtl ? 'text-right' : 'text-left'}`}>
                     <span className="text-[11px] font-bold text-slate-900 block truncate max-w-[85px]">
                       {isMerchant ? currentUser.businessName : currentUser.fullName}
                     </span>
@@ -351,15 +386,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                       {isMerchant ? t('merchantAccount') : t('buyerAccount')}
                     </span>
                   </div>
-                </button>
-
-                {/* Quick Role Switcher */}
-                <button
-                  onClick={onSwitchRole}
-                  title="التبديل بين حساب التاجر وحساب المشتري"
-                  className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white hover:bg-slate-100 text-slate-700 shadow-2xs border border-slate-200 cursor-pointer hidden md:block"
-                >
-                  {t('switchAccount')}
                 </button>
 
                 <button
@@ -392,10 +418,30 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Mobile secondary navigation strip */}
-        <div className="flex items-center gap-1 py-2 overflow-x-auto lg:hidden border-t border-slate-100 text-xs font-bold">
+        <div className="flex items-center gap-1.5 py-2 overflow-x-auto lg:hidden border-t border-slate-100 text-xs font-bold">
+          {/* Mobile Quick Role Switcher */}
+          <div className="flex items-center p-0.5 bg-slate-200/80 rounded-lg shrink-0">
+            <button
+              onClick={() => (onSelectRole ? onSelectRole('buyer') : onSwitchRole())}
+              className={`px-2 py-1 rounded-md text-[11px] font-black cursor-pointer ${
+                !isMerchant ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-700 hover:bg-white/50'
+              }`}
+            >
+              🛒 زبون
+            </button>
+            <button
+              onClick={() => (onSelectRole ? onSelectRole('merchant') : onSwitchRole())}
+              className={`px-2 py-1 rounded-md text-[11px] font-black cursor-pointer ${
+                isMerchant ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-700 hover:bg-white/50'
+              }`}
+            >
+              💼 تاجر
+            </button>
+          </div>
+
           <button
             onClick={() => onViewChange('feed')}
-            className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${
+            className={`px-3 py-1.5 rounded-lg whitespace-nowrap cursor-pointer ${
               activeView === 'feed' ? 'bg-blue-600 text-white' : 'text-slate-600 bg-slate-100'
             }`}
           >
@@ -404,7 +450,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <button
             onClick={() => onViewChange('videos')}
-            className={`px-3 py-1.5 rounded-lg whitespace-nowrap flex items-center gap-1 ${
+            className={`px-3 py-1.5 rounded-lg whitespace-nowrap flex items-center gap-1 cursor-pointer ${
               activeView === 'videos' ? 'bg-rose-600 text-white' : 'text-slate-600 bg-slate-100'
             }`}
           >

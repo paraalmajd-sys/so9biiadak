@@ -25,6 +25,7 @@ export interface ProductAd {
   reviewsCount: number;
   images: string[];
   videoUrl?: string;
+  fallbackVideoUrl?: string;
   videoPoster?: string;
   mediaType: 'image' | 'video' | 'gallery';
   videoDuration?: string;
@@ -53,6 +54,7 @@ export interface Story {
   discount: string;
   image: string;
   videoUrl?: string;
+  fallbackVideoUrl?: string;
   productAdId: string;
   views: string;
 }

@@ -32,14 +32,53 @@ export const ProductVideosView: React.FC<ProductVideosViewProps> = ({
 }) => {
   // Filter only ads that have videos
   const videoAds = ads.filter((ad) => ad.videoUrl);
-  const [playingVideoId, setPlayingVideoId] = useState<string | null>(videoAds[0]?.id || null);
+  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
   const [mutedStates, setMutedStates] = useState<Record<string, boolean>>({});
+  const [videoErrors, setVideoErrors] = useState<Record<string, boolean>>({});
+  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
 
   const toggleMute = (adId: string) => {
-    setMutedStates((prev) => ({
-      ...prev,
-      [adId]: !prev[adId],
-    }));
+    setMutedStates((prev) => {
+      const nextMuted = !prev[adId];
+      const videoEl = videoRefs.current[adId];
+      if (videoEl) videoEl.muted = nextMuted;
+      return {
+        ...prev,
+        [adId]: nextMuted,
+      };
+    });
+  };
+
+  const handleTogglePlay = (adId: string) => {
+    const videoEl = videoRefs.current[adId];
+    if (playingVideoId === adId) {
+      if (videoEl) videoEl.pause();
+      setPlayingVideoId(null);
+    } else {
+      // Pause any previously playing video
+      Object.entries(videoRefs.current).forEach(([id, el]) => {
+        if (id !== adId && el) el.pause();
+      });
+      if (videoEl) {
+        videoEl.muted = mutedStates[adId] ?? true;
+        const playPromise = videoEl.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              setPlayingVideoId(adId);
+              setVideoErrors((prev) => ({ ...prev, [adId]: false }));
+            })
+            .catch((err) => {
+              console.warn('Playback error or policy, attempting muted:', err);
+              videoEl.muted = true;
+              videoEl
+                .play()
+                .then(() => setPlayingVideoId(adId))
+                .catch(() => setVideoErrors((prev) => ({ ...prev, [adId]: true })));
+            });
+        }
+      }
+    }
   };
 
   return (
@@ -127,22 +166,52 @@ export const ProductVideosView: React.FC<ProductVideosViewProps> = ({
               {/* Video Player Container */}
               <div className="relative bg-black aspect-video sm:aspect-[16/9] flex items-center justify-center overflow-hidden group">
                 <video
-                  src={ad.videoUrl}
+                  ref={(el) => {
+                    videoRefs.current[ad.id] = el;
+                  }}
                   poster={ad.videoPoster || ad.images[0]}
                   loop
                   muted={isMuted}
                   playsInline
-                  autoPlay={isPlaying}
+                  preload="metadata"
                   className="w-full h-full object-cover cursor-pointer"
-                  onClick={() =>
-                    setPlayingVideoId(isPlaying ? null : ad.id)
-                  }
-                />
+                  onClick={() => handleTogglePlay(ad.id)}
+                  onPlay={() => {
+                    setPlayingVideoId(ad.id);
+                    setVideoErrors((prev) => ({ ...prev, [ad.id]: false }));
+                  }}
+                  onPause={() => {
+                    if (playingVideoId === ad.id) {
+                      setPlayingVideoId(null);
+                    }
+                  }}
+                  onError={() => {
+                    console.warn(`Video ${ad.id} playback error`);
+                    setVideoErrors((prev) => ({ ...prev, [ad.id]: true }));
+                  }}
+                >
+                  {ad.videoUrl && <source src={ad.videoUrl} type="video/mp4" />}
+                  {ad.fallbackVideoUrl && <source src={ad.fallbackVideoUrl} type="video/mp4" />}
+                  متصفحك لا يدعم تشغيل هذا الفيديو.
+                </video>
+
+                {/* Error overlay */}
+                {videoErrors[ad.id] && (
+                  <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-xs flex flex-col items-center justify-center text-white p-4 text-center z-10">
+                    <span className="text-xs font-bold mb-2">جاري تجهيز مقطع الفيديو...</span>
+                    <button
+                      onClick={() => handleTogglePlay(ad.id)}
+                      className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold cursor-pointer"
+                    >
+                      إعادة التشغيل
+                    </button>
+                  </div>
+                )}
 
                 {/* Big play button if paused */}
-                {!isPlaying && (
+                {!isPlaying && !videoErrors[ad.id] && (
                   <button
-                    onClick={() => setPlayingVideoId(ad.id)}
+                    onClick={() => handleTogglePlay(ad.id)}
                     className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-blue-600/90 hover:bg-blue-600 text-white flex items-center justify-center shadow-2xl transition-transform hover:scale-110 cursor-pointer"
                   >
                     <Play className="w-8 h-8 fill-white ml-1" />
@@ -153,9 +222,7 @@ export const ProductVideosView: React.FC<ProductVideosViewProps> = ({
                 <div className="absolute bottom-3 inset-x-3 flex items-center justify-between text-white text-xs z-10 px-3 py-1.5 bg-black/60 backdrop-blur-xs rounded-xl">
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() =>
-                        setPlayingVideoId(isPlaying ? null : ad.id)
-                      }
+                      onClick={() => handleTogglePlay(ad.id)}
                       className="hover:text-blue-400 cursor-pointer"
                     >
                       {isPlaying ? (

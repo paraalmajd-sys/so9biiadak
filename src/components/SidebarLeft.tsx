@@ -34,6 +34,8 @@ interface SidebarLeftProps {
   currentUser: UserAccount | null;
   onOpenSubscriptionModal: () => void;
   onOpenSettings?: () => void;
+  onSelectRole?: (role: 'buyer' | 'merchant') => void;
+  onSwitchRole?: () => void;
 }
 
 export const SidebarLeft: React.FC<SidebarLeftProps> = ({
@@ -47,54 +49,109 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
   currentUser,
   onOpenSubscriptionModal,
   onOpenSettings,
+  onSelectRole,
+  onSwitchRole,
 }) => {
   const { t, currentLangInfo, isRtl } = useLanguage();
   const isMerchant = currentUser?.role === 'merchant';
 
   return (
     <aside className="space-y-4" dir={isRtl ? 'rtl' : 'ltr'}>
-      {/* Account Type Card */}
-      <div className={`bg-white rounded-xl border border-slate-200/80 p-3 shadow-xs ${isRtl ? 'text-right' : 'text-left'}`}>
+      {/* 1. Dedicated Dual Account Switcher Card */}
+      <div className={`bg-white rounded-xl border border-slate-200/80 p-3.5 shadow-xs ${isRtl ? 'text-right' : 'text-left'}`}>
         <div className="flex items-center justify-between mb-2">
-          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isMerchant ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700'}`}>
-            {isMerchant ? t('merchantAccount') : t('buyerAccount')}
+          <span className="text-[11px] font-black text-slate-800">
+            {isRtl ? 'نوع الحساب (2 خيارات)' : 'Type de Compte'}
           </span>
-          <span className="text-[11px] font-bold text-slate-400">
-            {currentUser?.fullName || 'زائر'}
+          <span className="text-[10px] text-slate-400 font-mono">
+            {currentUser?.fullName}
           </span>
         </div>
 
+        {/* 2 Big Account Choice Tabs */}
+        <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl mb-3 border border-slate-200">
+          <button
+            type="button"
+            onClick={() => (onSelectRole ? onSelectRole('buyer') : onSwitchRole?.())}
+            className={`p-2 rounded-lg text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
+              !isMerchant
+                ? 'bg-emerald-600 text-white font-black shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60 font-bold'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            <span className="text-[11px] leading-tight">
+              {isRtl ? 'حساب الزبون' : 'Client'}
+            </span>
+            <span className="text-[9px] opacity-80 leading-none">
+              {isRtl ? '(المشتري)' : '(Acheteur)'}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => (onSelectRole ? onSelectRole('merchant') : onSwitchRole?.())}
+            className={`p-2 rounded-lg text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
+              isMerchant
+                ? 'bg-blue-600 text-white font-black shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60 font-bold'
+            }`}
+          >
+            <Store className="w-4 h-4" />
+            <span className="text-[11px] leading-tight">
+              {isRtl ? 'حساب التاجر' : 'Vendeur'}
+            </span>
+            <span className="text-[9px] opacity-80 leading-none">
+              {isRtl ? '(البائع)' : '(Commerçant)'}
+            </span>
+          </button>
+        </div>
+
         {isMerchant ? (
-          <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100 text-xs">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-slate-500">حالة الاشتراك:</span>
-              <span className="font-bold text-emerald-700">
+          /* Merchant Details */
+          <div className="p-2.5 bg-blue-50/60 rounded-lg border border-blue-100 text-xs space-y-1.5">
+            <div className="flex justify-between items-center text-[11px]">
+              <span className="text-slate-600 font-medium">باقة الاشتراك:</span>
+              <span className="font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded-full text-[10px]">
                 {currentUser?.hasActiveSubscription
-                  ? currentUser.planId === 'vip' ? 'باقة VIP ($45)' : currentUser.planId === 'pro' ? 'باقة المحترف ($30)' : 'باقة البداية ($20)'
-                  : 'غير مشترك بعد'}
+                  ? currentUser.planId === 'vip'
+                    ? 'باقة VIP ($45)'
+                    : currentUser.planId === 'pro'
+                    ? 'باقة المحترف ($30)'
+                    : 'باقة البداية ($20)'
+                  : 'غير مفعلة'}
               </span>
             </div>
+            <p className="text-[10px] text-slate-500 leading-tight">
+              لديك صلاحية نشر الإعلانات ومتابعة إحصائيات الـ ADS واستقبال طلبيات الزبائن.
+            </p>
             {!currentUser?.hasActiveSubscription && (
               <button
                 onClick={onOpenSubscriptionModal}
-                className="w-full mt-1.5 py-1 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded text-[11px] transition-colors cursor-pointer"
+                className="w-full mt-1 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-xs transition-colors cursor-pointer"
               >
                 تفعيل الاشتراك لنشر الإعلانات
               </button>
             )}
           </div>
         ) : (
-          <div className="p-2.5 bg-blue-50/70 rounded-lg border border-blue-100 text-xs text-blue-900 space-y-1">
-            <p className="font-bold text-[11px]">هل ترغب في بيع منتجاتك؟</p>
-            <p className="text-[10px] text-blue-700 leading-tight">
-              رقي حسابك إلى تاجر واشترك في إحدى الباقات لتبدأ عرض سلعك أمام آلاف الزبائن.
+          /* Buyer Details */
+          <div className="p-2.5 bg-emerald-50/70 rounded-lg border border-emerald-100 text-xs space-y-1.5">
+            <div className="flex justify-between items-center text-[11px]">
+              <span className="text-slate-600 font-medium">الوضع النشط:</span>
+              <span className="font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full text-[10px]">
+                مشتري معتمد
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-600 leading-tight">
+              تصفح المنتجات والفيديوهات، اطلب عبر واتساب والدفع عند الاستلام مع تتبع شحن طلبياتك.
             </p>
             <button
-              onClick={onOpenSubscriptionModal}
-              className="text-[11px] font-bold text-blue-600 hover:underline flex items-center gap-1 pt-1 cursor-pointer"
+              onClick={() => (onSelectRole ? onSelectRole('merchant') : onSwitchRole?.())}
+              className="w-full mt-1 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs transition-colors cursor-pointer flex items-center justify-center gap-1"
             >
-              <span>{t('plansTitle')}</span>
-              <ArrowRight className={`w-3 h-3 ${isRtl ? 'rotate-180' : ''}`} />
+              <Store className="w-3.5 h-3.5" />
+              <span>ترقية إلى تاجر لعرض سلعك</span>
             </button>
           </div>
         )}

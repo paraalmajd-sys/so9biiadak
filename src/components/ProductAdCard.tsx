@@ -50,6 +50,7 @@ export const ProductAdCard: React.FC<ProductAdCardProps> = ({
   const [mediaTab, setMediaTab] = useState<'video' | 'images'>(ad.videoUrl ? 'video' : 'images');
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [videoLoadError, setVideoLoadError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const toggleVideoPlay = () => {
@@ -58,15 +59,33 @@ export const ProductAdCard: React.FC<ProductAdCardProps> = ({
       videoRef.current.pause();
       setIsPlaying(false);
     } else {
-      videoRef.current.play();
-      setIsPlaying(true);
+      const promise = videoRef.current.play();
+      if (promise !== undefined) {
+        promise
+          .then(() => {
+            setIsPlaying(true);
+            setVideoLoadError(false);
+          })
+          .catch((err) => {
+            console.warn('Video playback warning, retrying muted:', err);
+            if (videoRef.current) {
+              videoRef.current.muted = true;
+              setIsMuted(true);
+              videoRef.current
+                .play()
+                .then(() => setIsPlaying(true))
+                .catch(() => setVideoLoadError(true));
+            }
+          });
+      }
     }
   };
 
   const toggleMute = () => {
     if (!videoRef.current) return;
-    videoRef.current.muted = !isMuted;
-    setIsMuted(!isMuted);
+    const nextMuted = !isMuted;
+    videoRef.current.muted = nextMuted;
+    setIsMuted(nextMuted);
   };
 
   const handleShare = () => {
@@ -282,17 +301,46 @@ export const ProductAdCard: React.FC<ProductAdCardProps> = ({
           <div className="relative w-full aspect-video bg-black flex items-center justify-center">
             <video
               ref={videoRef}
-              src={ad.videoUrl}
               poster={ad.videoPoster || ad.images[0]}
               loop
               muted={isMuted}
               playsInline
+              preload="metadata"
               onClick={toggleVideoPlay}
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+              onError={() => {
+                console.warn('Video failed, triggering fallback');
+                setVideoLoadError(true);
+              }}
               className="w-full h-full object-cover cursor-pointer"
-            />
+            >
+              {ad.videoUrl && <source src={ad.videoUrl} type="video/mp4" />}
+              {ad.fallbackVideoUrl && <source src={ad.fallbackVideoUrl} type="video/mp4" />}
+              متصفحك لا يدعم تشغيل الفيديو المباشر.
+            </video>
+
+            {/* Error or Fallback Overlay */}
+            {videoLoadError && (
+              <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-xs flex flex-col items-center justify-center text-white p-4 text-center z-10">
+                <span className="text-xs font-bold mb-2">تعذر تشغيل هذا الفيديو مؤقتاً</span>
+                <button
+                  onClick={() => {
+                    setVideoLoadError(false);
+                    if (videoRef.current) {
+                      videoRef.current.load();
+                      videoRef.current.play().catch(() => {});
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold cursor-pointer"
+                >
+                  إعادة المحاولة
+                </button>
+              </div>
+            )}
 
             {/* Play/Pause Overlay */}
-            {!isPlaying && (
+            {!isPlaying && !videoLoadError && (
               <button
                 onClick={toggleVideoPlay}
                 className="absolute inset-0 m-auto w-14 h-14 rounded-full bg-blue-600/90 hover:bg-blue-600 text-white flex items-center justify-center shadow-lg transition-transform hover:scale-110 cursor-pointer"

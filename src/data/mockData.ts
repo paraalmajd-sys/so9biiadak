@@ -9,6 +9,12 @@ import {
   UserAccount,
 } from '../types';
 
+export const getLocalVideo = (filename: string): string => {
+  const base = import.meta.env.BASE_URL || './';
+  const cleanBase = base.endsWith('/') ? base : `${base}/`;
+  return `${cleanBase}videos/${filename}`;
+};
+
 export const INITIAL_STORIES: Story[] = [
   {
     id: 's1',
@@ -17,7 +23,8 @@ export const INITIAL_STORIES: Story[] = [
     title: 'فيديو تجربة ساعة التيتانيوم',
     discount: '-45%',
     image: '/src/assets/images/product_smartwatch_ultra_1792240155179.jpg',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-modern-smartwatch-with-black-strap-42171-large.mp4',
+    videoUrl: getLocalVideo('product-preview-1.mp4'),
+    fallbackVideoUrl: 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4',
     productAdId: 'ad-1',
     views: '4.8k'
   },
@@ -28,7 +35,8 @@ export const INITIAL_STORIES: Story[] = [
     title: 'فيديو نتائج سيروم الأركان',
     discount: '-30%',
     image: '/src/assets/images/product_moroccan_argan_oil_1792240155621.jpg',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-woman-applying-a-face-cream-in-front-of-a-mirror-40742-large.mp4',
+    videoUrl: getLocalVideo('product-preview-2.mp4'),
+    fallbackVideoUrl: 'https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_1MB.mp4',
     productAdId: 'ad-2',
     views: '6.2k'
   },
@@ -39,6 +47,8 @@ export const INITIAL_STORIES: Story[] = [
     title: 'فيديو تجربة عزل الصوت ANC',
     discount: '-50%',
     image: '/src/assets/images/product_wireless_earbuds_1792240155858.jpg',
+    videoUrl: getLocalVideo('product-preview-3.mp4'),
+    fallbackVideoUrl: 'https://test-videos.co.uk/vids/sintel/mp4/h264/360/Sintel_360_10s_1MB.mp4',
     productAdId: 'ad-3',
     views: '3.9k'
   },
@@ -49,7 +59,8 @@ export const INITIAL_STORIES: Story[] = [
     title: 'فيديو ورشة خياطة الجلد الطبيعي',
     discount: '-35%',
     image: '/src/assets/images/product_leather_sneakers_1792240155657.jpg',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-leather-shoes-in-a-workshop-43753-large.mp4',
+    videoUrl: getLocalVideo('product-preview-4.mp4'),
+    fallbackVideoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
     productAdId: 'ad-4',
     views: '5.1k'
   }
@@ -88,7 +99,8 @@ export const INITIAL_ADS: ProductAd[] = [
       '/src/assets/images/product_smartwatch_ultra_1792240155179.jpg',
       '/src/assets/images/product_wireless_earbuds_1792240155858.jpg'
     ],
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-modern-smartwatch-with-black-strap-42171-large.mp4',
+    videoUrl: getLocalVideo('product-preview-1.mp4'),
+    fallbackVideoUrl: 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4',
     videoPoster: '/src/assets/images/product_smartwatch_ultra_1792240155179.jpg',
     mediaType: 'video',
     videoDuration: '0:34',
@@ -163,7 +175,8 @@ export const INITIAL_ADS: ProductAd[] = [
     images: [
       '/src/assets/images/product_moroccan_argan_oil_1792240155621.jpg'
     ],
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-woman-applying-a-face-cream-in-front-of-a-mirror-40742-large.mp4',
+    videoUrl: getLocalVideo('product-preview-2.mp4'),
+    fallbackVideoUrl: 'https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_1MB.mp4',
     videoPoster: '/src/assets/images/product_moroccan_argan_oil_1792240155621.jpg',
     mediaType: 'video',
     videoDuration: '0:28',
@@ -237,7 +250,12 @@ export const INITIAL_ADS: ProductAd[] = [
     images: [
       '/src/assets/images/product_wireless_earbuds_1792240155858.jpg'
     ],
-    mediaType: 'image',
+    videoUrl: getLocalVideo('product-preview-3.mp4'),
+    fallbackVideoUrl: 'https://test-videos.co.uk/vids/sintel/mp4/h264/360/Sintel_360_10s_1MB.mp4',
+    videoPoster: '/src/assets/images/product_wireless_earbuds_1792240155858.jpg',
+    mediaType: 'video',
+    videoDuration: '0:38',
+    videoViews: '9.4k',
     category: 'electronics',
     city: 'طنجة',
     whatsappNumber: '+212612345678',
@@ -298,7 +316,8 @@ export const INITIAL_ADS: ProductAd[] = [
     images: [
       '/src/assets/images/product_leather_sneakers_1792240155657.jpg'
     ],
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-leather-shoes-in-a-workshop-43753-large.mp4',
+    videoUrl: getLocalVideo('product-preview-4.mp4'),
+    fallbackVideoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
     videoPoster: '/src/assets/images/product_leather_sneakers_1792240155657.jpg',
     mediaType: 'video',
     videoDuration: '0:42',

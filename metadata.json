@@ -1,0 +1,8 @@
+{
+  "name": "SO9FIADAK - سوق في يدك | منصة إعلانات المنتجات",
+  "description": "منصة سوشيال كوميرس عصرية بنمط فيسبوك مخصصة حصرياً لإعلانات المنتجات، التواصل المباشر، والطلب عبر واتساب مع الدفع عند الاستلام.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

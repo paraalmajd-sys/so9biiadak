@@ -1,6 +1,6 @@
 import React from 'react';
 import { CATEGORIES, CITIES } from '../data/mockData';
-import { UserAccount } from '../types';
+import { UserAccount, ActiveViewType } from '../types';
 import { useLanguage } from '../i18n/LanguageContext';
 import {
   Layers,
@@ -21,6 +21,8 @@ import {
   Video,
   Settings,
   Globe,
+  Palette,
+  Calculator,
 } from 'lucide-react';
 
 interface SidebarLeftProps {
@@ -29,7 +31,7 @@ interface SidebarLeftProps {
   selectedCity: string;
   onSelectCity: (city: string) => void;
   adsCount: number;
-  onNavigateView: (view: 'feed' | 'videos' | 'dashboard' | 'profile' | 'orders' | 'pricing' | 'buyer_orders') => void;
+  onNavigateView: (view: ActiveViewType) => void;
   activeView: string;
   currentUser: UserAccount | null;
   onOpenSubscriptionModal: () => void;
@@ -265,6 +267,46 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({
               <CreditCard className="w-3.5 h-3.5" />
             </div>
             <span>{t('navPlans')}</span>
+          </button>
+
+          {/* Creative Studio & Landing Page */}
+          <button
+            onClick={() => onNavigateView('creatives')}
+            className={`w-full ${isRtl ? 'text-right' : 'text-left'} px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+              activeView === 'creatives'
+                ? 'bg-indigo-50 text-indigo-700 font-black'
+                : 'text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-6 h-6 rounded-md bg-indigo-600 text-white flex items-center justify-center text-xs">
+                <Palette className="w-3.5 h-3.5" />
+              </div>
+              <span>صانع الكرياتيف واللاندينغ</span>
+            </div>
+            <span className="text-[9px] font-black bg-indigo-100 text-indigo-700 px-1.5 py-0.2 rounded-md">
+              جديد
+            </span>
+          </button>
+
+          {/* Product Simulator & Accounting */}
+          <button
+            onClick={() => onNavigateView('simulator')}
+            className={`w-full ${isRtl ? 'text-right' : 'text-left'} px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+              activeView === 'simulator'
+                ? 'bg-teal-50 text-teal-800 font-black'
+                : 'text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-6 h-6 rounded-md bg-teal-600 text-white flex items-center justify-center text-xs">
+                <Calculator className="w-3.5 h-3.5" />
+              </div>
+              <span>محاكي الأرباح والمحاسبة</span>
+            </div>
+            <span className="text-[9px] font-black bg-teal-100 text-teal-700 px-1.5 py-0.2 rounded-md">
+              جديد
+            </span>
           </button>
 
           {/* Settings & Languages shortcut in sidebar */}

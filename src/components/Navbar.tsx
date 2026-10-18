@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { UserAccount, SellerNotification } from '../types';
+import { UserAccount, SellerNotification, ActiveViewType } from '../types';
 import { NotificationsDropdown } from './NotificationsDropdown';
 import { useLanguage } from '../i18n/LanguageContext';
 import { SUPPORTED_LANGUAGES, Language } from '../i18n/translations';
@@ -25,6 +25,8 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Palette,
+  Calculator,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -34,8 +36,8 @@ interface NavbarProps {
   ordersCount: number;
   onOpenSaved: () => void;
   onAttemptCreateAd: () => void;
-  activeView: 'feed' | 'videos' | 'dashboard' | 'profile' | 'orders' | 'deals' | 'cities' | 'pricing' | 'buyer_orders';
-  onViewChange: (view: 'feed' | 'videos' | 'dashboard' | 'profile' | 'orders' | 'deals' | 'cities' | 'pricing' | 'buyer_orders') => void;
+  activeView: ActiveViewType;
+  onViewChange: (view: ActiveViewType) => void;
   currentUser: UserAccount | null;
   onOpenAuth: () => void;
   onLogout: () => void;
@@ -414,6 +416,46 @@ export const Navbar: React.FC<NavbarProps> = ({
                       </div>
                       <span className="text-[10px] text-amber-700 font-black bg-amber-100 px-1.5 py-0.5 rounded-md">
                         $20 - $45
+                      </span>
+                    </button>
+
+                    {/* Creative Studio & Landing Page */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsGroupedMenuOpen(false);
+                        onViewChange('creatives');
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-colors cursor-pointer ${
+                        activeView === 'creatives' ? 'bg-indigo-50 text-indigo-700 font-black' : 'hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Palette className="w-4 h-4 text-indigo-600" />
+                        <span>صانع الكرياتيف واللاندينغ بيج</span>
+                      </div>
+                      <span className="text-[10px] text-indigo-700 font-black bg-indigo-100 px-1.5 py-0.5 rounded-md">
+                        جديد ✦
+                      </span>
+                    </button>
+
+                    {/* Product Simulator & Accounting */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsGroupedMenuOpen(false);
+                        onViewChange('simulator');
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-colors cursor-pointer ${
+                        activeView === 'simulator' ? 'bg-teal-50 text-teal-700 font-black' : 'hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Calculator className="w-4 h-4 text-teal-600" />
+                        <span>محاكي الأرباح والمحاسبة</span>
+                      </div>
+                      <span className="text-[10px] text-teal-700 font-black bg-teal-100 px-1.5 py-0.5 rounded-md">
+                        جديد ✦
                       </span>
                     </button>
 

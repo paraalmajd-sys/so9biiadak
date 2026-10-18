@@ -156,3 +156,54 @@ export interface PricingPlan {
   adsLimit: string;
   supportLevel: string;
 }
+
+export type ActiveViewType =
+  | 'feed'
+  | 'videos'
+  | 'dashboard'
+  | 'profile'
+  | 'orders'
+  | 'deals'
+  | 'cities'
+  | 'pricing'
+  | 'buyer_orders'
+  | 'creatives'
+  | 'simulator';
+
+export interface Invoice {
+  id: string;
+  orderId: string;
+  customerName: string;
+  customerPhone: string;
+  customerCity: string;
+  customerAddress: string;
+  productTitle: string;
+  productImage?: string;
+  quantity: number;
+  unitPrice: number;
+  shippingCost: number;
+  totalAmount: number;
+  currency: string;
+  date: string; // YYYY-MM-DD
+  month: string; // YYYY-MM
+  year: string; // YYYY
+  status: 'paid' | 'pending' | 'cancelled';
+  sellerName: string;
+  sellerPhone: string;
+  sellerCity: string;
+  iceNumber?: string;
+  notes?: string;
+}
+
+export interface CreativeAsset {
+  id: string;
+  title: string;
+  category: string;
+  hook: string;
+  bodyCopy: string;
+  callToAction: string;
+  badgeOffer: string;
+  targetAudience: string;
+  image: string;
+}
+

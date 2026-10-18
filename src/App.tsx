@@ -8,6 +8,7 @@ import {
   PricingPlan,
   SellerNotification,
   UserAccount,
+  ActiveViewType,
 } from './types';
 import {
   INITIAL_ADS,
@@ -31,6 +32,8 @@ import { PageDashboardView } from './components/PageDashboardView';
 import { PricingPlansView } from './components/PricingPlansView';
 import { ProductVideosView } from './components/ProductVideosView';
 import { BuyerOrdersView } from './components/BuyerOrdersView';
+import { CreativeLandingBuilderView } from './components/CreativeLandingBuilderView';
+import { ProductSimulatorAccountingView } from './components/ProductSimulatorAccountingView';
 import { QuickOrderModal } from './components/QuickOrderModal';
 import { CreateAdModal } from './components/CreateAdModal';
 import { StoryViewerModal } from './components/StoryViewerModal';
@@ -79,7 +82,7 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedCity, setSelectedCity] = useState('كل المدن');
   const [priceSort, setPriceSort] = useState<'all' | 'low' | 'high' | 'deals'>('all');
-  const [activeView, setActiveView] = useState<'feed' | 'videos' | 'dashboard' | 'profile' | 'orders' | 'deals' | 'cities' | 'pricing' | 'buyer_orders'>('feed');
+  const [activeView, setActiveView] = useState<ActiveViewType>('feed');
 
   // Modals state
   const [quickOrderAd, setQuickOrderAd] = useState<ProductAd | null>(null);
@@ -493,6 +496,23 @@ export default function App() {
             orders={orders}
             currentUser={currentUser}
             onGoToFeed={() => setActiveView('feed')}
+          />
+        )}
+
+        {/* VIEW 7: Dedicated Creative Studio & Landing Page Builder */}
+        {activeView === 'creatives' && (
+          <CreativeLandingBuilderView
+            ads={ads}
+            onOpenCreateAd={handleAttemptCreateAd}
+            onQuickOrder={(targetAd) => setQuickOrderAd(targetAd)}
+          />
+        )}
+
+        {/* VIEW 8: Dedicated Product Market Fit Simulator, Profit Portfolio & Invoicing / Accounting */}
+        {activeView === 'simulator' && (
+          <ProductSimulatorAccountingView
+            ads={ads}
+            onOpenCreateAd={handleAttemptCreateAd}
           />
         )}
 

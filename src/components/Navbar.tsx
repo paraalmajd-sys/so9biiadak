@@ -5,6 +5,11 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { SUPPORTED_LANGUAGES, Language } from '../i18n/translations';
 import {
   Search,
+  X,
+  Menu,
+  Layers,
+  Sparkles,
+  Video,
   PlusCircle,
   Bookmark,
   LayoutDashboard,
@@ -15,11 +20,11 @@ import {
   User,
   LogOut,
   Package,
-  Video,
   Globe,
   Settings,
-  ChevronDown,
   Check,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -41,6 +46,7 @@ interface NavbarProps {
   onSwitchRole: () => void;
   onSelectRole?: (role: 'buyer' | 'merchant') => void;
   onOpenSettings: () => void;
+  onOpenStories?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -62,20 +68,22 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSwitchRole,
   onSelectRole,
   onOpenSettings,
+  onOpenStories,
 }) => {
   const { t, language, setLanguage, currentLangInfo, isRtl } = useLanguage();
+  const [isGroupedMenuOpen, setIsGroupedMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
-  const langMenuRef = useRef<HTMLDivElement>(null);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const groupedMenuRef = useRef<HTMLDivElement>(null);
 
   const unreadNotifsCount = notifications.filter((n) => !n.read).length;
   const isMerchant = currentUser?.role === 'merchant';
 
-  // Close language dropdown when clicking outside
+  // Close grouped menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
-        setIsLangMenuOpen(false);
+      if (groupedMenuRef.current && !groupedMenuRef.current.contains(event.target as Node)) {
+        setIsGroupedMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -84,43 +92,55 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const handleSelectLang = (code: Language) => {
     setLanguage(code);
-    setIsLangMenuOpen(false);
+  };
+
+  const handleRoleChange = (role: 'buyer' | 'merchant') => {
+    if (onSelectRole) {
+      onSelectRole(role);
+    } else {
+      onSwitchRole();
+    }
   };
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200/90 shadow-xs" dir={isRtl ? 'rtl' : 'ltr'}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-3 sm:gap-6 h-16">
-          {/* Zone 1: Single text element wordmark */}
-          <div className="flex items-center gap-2.5 shrink-0">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between gap-2 sm:gap-4 h-16">
+          
+          {/* 1. LOGO DIAL STZ (Site Logo) */}
+          <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => onViewChange('feed')}
+              onClick={() => {
+                onViewChange('feed');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               className={`flex items-center gap-2 group cursor-pointer ${isRtl ? 'text-right' : 'text-left'}`}
+              title="الرئيسية - سوق في يدك"
             >
-              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-xl shadow-sm group-hover:bg-blue-700 transition-colors">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 via-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-xs group-hover:scale-105 transition-transform">
                 {language === 'fr' || language === 'en' ? 'S' : 'س'}
               </div>
-              <div>
-                <span className="text-xl font-black tracking-tight text-slate-900 whitespace-nowrap block">
+              <div className="hidden xs:block sm:block">
+                <span className="text-base sm:text-lg font-black tracking-tight text-slate-900 block leading-tight">
                   {t('appName')}
                 </span>
-                <span className="text-[11px] font-semibold text-blue-600 block leading-none">
+                <span className="text-[10px] font-bold text-blue-600 block leading-none">
                   {t('appTagline')}
                 </span>
               </div>
             </button>
           </div>
 
-          {/* Search bar in center */}
-          <div className="flex-1 max-w-sm hidden xl:block">
+          {/* 2. RECHERCHE (Search bar in center) */}
+          <div className="flex-1 max-w-xs sm:max-w-sm md:max-w-md mx-1 sm:mx-2">
             <div className="relative">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder={t('searchPlaceholder')}
-                className={`w-full py-2 bg-slate-100 hover:bg-slate-200/70 focus:bg-white text-xs rounded-full border border-transparent focus:border-blue-500 focus:outline-none transition-all placeholder:text-slate-400 text-slate-800 ${
-                  isRtl ? 'pl-4 pr-10' : 'pr-4 pl-10'
+                className={`w-full py-2 bg-slate-100 hover:bg-slate-200/70 focus:bg-white text-xs rounded-full border border-slate-200/80 focus:border-blue-500 focus:outline-none transition-all placeholder:text-slate-400 text-slate-800 shadow-2xs ${
+                  isRtl ? 'pl-8 pr-9' : 'pr-8 pl-9'
                 }`}
               />
               <Search
@@ -128,397 +148,415 @@ export const Navbar: React.FC<NavbarProps> = ({
                   isRtl ? 'right-3' : 'left-3'
                 }`}
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => onSearchChange('')}
+                  className={`absolute top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer ${
+                    isRtl ? 'left-2.5' : 'right-2.5'
+                  }`}
+                  title="مسح البحث"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Zone 2: Navigation Links (Single line, whitespace-nowrap) */}
-          <nav className="hidden lg:flex items-center gap-4 xl:gap-5 text-xs font-bold text-slate-600">
-            {/* Feed */}
+          {/* 3. CORE TABS: LES POSTS, STORIES, REELS */}
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            {/* Tab 1: LES POSTS (المنشورات) */}
             <button
-              onClick={() => onViewChange('feed')}
-              className={`hover:text-blue-600 transition-colors whitespace-nowrap shrink-0 py-1 border-b-2 cursor-pointer ${
-                activeView === 'feed'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent'
+              type="button"
+              onClick={() => {
+                onViewChange('feed');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                activeView === 'feed' || activeView === 'deals' || activeView === 'cities'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-700 bg-slate-100 hover:bg-slate-200/80'
               }`}
+              title="المنشورات والإعلانات الرئيسية (Feed / Posts)"
             >
-              {t('navFeed')}
+              <Layers className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{t('navPosts')}</span>
             </button>
 
-            {/* Video Watch / Reels page */}
+            {/* Tab 2: STORIES (الستوريات) */}
             <button
+              type="button"
+              onClick={() => {
+                if (onOpenStories) {
+                  onOpenStories();
+                } else {
+                  onViewChange('feed');
+                }
+              }}
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer bg-slate-100 hover:bg-amber-50 text-slate-800 hover:text-amber-800 border border-transparent hover:border-amber-200"
+              title="ستوريات وقصص المنتجات (Stories)"
+            >
+              <div className="p-0.5 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600">
+                <div className="bg-white rounded-full p-0.5">
+                  <Sparkles className="w-2.5 h-2.5 text-rose-500" />
+                </div>
+              </div>
+              <span className="hidden sm:inline">{t('navStories')}</span>
+            </button>
+
+            {/* Tab 3: REELS (الريلز / الفيديوهات) */}
+            <button
+              type="button"
               onClick={() => onViewChange('videos')}
-              className={`hover:text-blue-600 transition-colors whitespace-nowrap shrink-0 py-1 border-b-2 cursor-pointer flex items-center gap-1.5 ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 activeView === 'videos'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-slate-700 bg-slate-100 hover:bg-slate-200/80'
               }`}
+              title="فيديوهات وريلز المنتجات (Reels)"
             >
-              <Video className="w-3.5 h-3.5 text-rose-500" />
-              <span>{t('navVideos')}</span>
+              <Video className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{t('navReels')}</span>
             </button>
 
-            {/* Merchant Navigation Links */}
-            {isMerchant ? (
-              <>
-                <button
-                  onClick={() => onViewChange('dashboard')}
-                  className={`hover:text-blue-600 transition-colors whitespace-nowrap shrink-0 py-1 border-b-2 cursor-pointer flex items-center gap-1.5 ${
-                    activeView === 'dashboard'
-                      ? 'border-blue-600 text-blue-600'
-                      : 'border-transparent'
-                  }`}
-                >
-                  <LayoutDashboard className="w-3.5 h-3.5 text-blue-600" />
-                  <span>{t('navDashboard')}</span>
-                </button>
-
-                <button
-                  onClick={() => onViewChange('profile')}
-                  className={`hover:text-blue-600 transition-colors whitespace-nowrap shrink-0 py-1 border-b-2 cursor-pointer flex items-center gap-1.5 ${
-                    activeView === 'profile'
-                      ? 'border-blue-600 text-blue-600'
-                      : 'border-transparent'
-                  }`}
-                >
-                  <Store className="w-3.5 h-3.5 text-purple-600" />
-                  <span>{t('navProfile')}</span>
-                </button>
-
-                <button
-                  onClick={() => onViewChange('orders')}
-                  className={`hover:text-blue-600 transition-colors whitespace-nowrap shrink-0 py-1 border-b-2 cursor-pointer flex items-center gap-1.5 ${
-                    activeView === 'orders'
-                      ? 'border-blue-600 text-blue-600'
-                      : 'border-transparent'
-                  }`}
-                >
-                  <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>{t('navCustomerOrders')}</span>
-                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.2 rounded-full tabular-nums">
-                    {ordersCount}
-                  </span>
-                </button>
-              </>
-            ) : (
-              /* Buyer Navigation Links */
+            {/* 4. MUNI MKHMO3 (Grouped Menu Button & Dropdown) */}
+            <div className="relative" ref={groupedMenuRef}>
               <button
-                onClick={() => onViewChange('buyer_orders')}
-                className={`hover:text-blue-600 transition-colors whitespace-nowrap shrink-0 py-1 border-b-2 cursor-pointer flex items-center gap-1.5 ${
-                  activeView === 'buyer_orders'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent'
+                type="button"
+                onClick={() => setIsGroupedMenuOpen(!isGroupedMenuOpen)}
+                className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer ${
+                  isGroupedMenuOpen
+                    ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200/90'
                 }`}
+                title="القائمة الشاملة (Menu مجموع)"
               >
-                <Package className="w-3.5 h-3.5 text-emerald-600" />
-                <span>{t('navMyOrders')}</span>
-                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.2 rounded-full tabular-nums">
-                  {ordersCount}
-                </span>
-              </button>
-            )}
-
-            {/* Pricing Plans */}
-            <button
-              onClick={() => onViewChange('pricing')}
-              className={`hover:text-blue-600 transition-colors whitespace-nowrap shrink-0 py-1 border-b-2 cursor-pointer flex items-center gap-1.5 ${
-                activeView === 'pricing'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-amber-600'
-              }`}
-            >
-              <CreditCard className="w-3.5 h-3.5 text-amber-500" />
-              <span>{t('navPlans')}</span>
-            </button>
-          </nav>
-
-          {/* Zone 3: Language Selector + Settings + Notification Bell + User Profile */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Language Quick Dropdown */}
-            <div className="relative" ref={langMenuRef}>
-              <button
-                onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer border border-slate-200"
-                title={t('settingsLanguageTab')}
-              >
-                <span className="text-sm select-none">{currentLangInfo.flag}</span>
-                <span className="hidden md:inline font-bold">{currentLangInfo.nativeName}</span>
-                <ChevronDown className="w-3 h-3 text-slate-500" />
+                <Menu className="w-4 h-4" />
+                {currentUser?.isLoggedIn ? (
+                  <div className="flex items-center gap-1.5">
+                    <img
+                      src={currentUser.avatar}
+                      alt={currentUser.fullName}
+                      className="w-5 h-5 rounded-full object-cover border border-slate-300"
+                      referrerPolicy="no-referrer"
+                    />
+                    <span className="hidden md:inline font-bold">
+                      {isMerchant ? 'تاجر' : 'زبون'}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="hidden sm:inline">{t('navMenu')}</span>
+                )}
+                {unreadNotifsCount > 0 && (
+                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                )}
               </button>
 
-              {isLangMenuOpen && (
+              {/* Grouped Menu Dropdown Panel (MUNI MKHMO3) */}
+              {isGroupedMenuOpen && (
                 <div
-                  className={`absolute top-full mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 ${
+                  className={`absolute top-full mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2.5 z-50 animate-in fade-in zoom-in-95 duration-150 ${
                     isRtl ? 'left-0' : 'right-0'
                   }`}
                 >
-                  <div className="px-3 py-1.5 text-[11px] font-black text-slate-400 border-b border-slate-100">
-                    {t('settingsLanguageTab')}
-                  </div>
-                  {SUPPORTED_LANGUAGES.map((lang) => {
-                    const isSelected = language === lang.code;
-                    return (
+                  {/* Card 1: Dual Account Switcher (حساب الزبون vs حساب التاجر) */}
+                  <div className="px-3 pb-3 border-b border-slate-100">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-black text-slate-800">
+                        {isRtl ? 'نوع الحساب النشط' : 'Type de Compte'}
+                      </span>
+                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isMerchant ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                        {isMerchant ? '💼 حساب التاجر' : '🛒 حساب الزبون'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
                       <button
-                        key={lang.code}
-                        onClick={() => handleSelectLang(lang.code)}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-xs transition-colors cursor-pointer ${
-                          isSelected
-                            ? 'bg-blue-50 text-blue-700 font-bold'
-                            : 'text-slate-700 hover:bg-slate-50'
+                        type="button"
+                        onClick={() => {
+                          handleRoleChange('buyer');
+                          setIsGroupedMenuOpen(false);
+                        }}
+                        className={`py-1.5 px-2 rounded-lg text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 text-xs ${
+                          !isMerchant
+                            ? 'bg-emerald-600 text-white font-black shadow-xs'
+                            : 'text-slate-700 hover:bg-white/60 font-bold'
                         }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="text-base select-none">{lang.flag}</span>
-                          <span className="font-bold">{lang.nativeName}</span>
-                          <span className="text-[10px] text-slate-400 font-normal">
-                            ({lang.name})
-                          </span>
-                        </div>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                        <User className="w-3.5 h-3.5" />
+                        <span>{isRtl ? 'زبون' : 'Client'}</span>
                       </button>
-                    );
-                  })}
-                  <div className="pt-1 mt-1 border-t border-slate-100 px-2">
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleRoleChange('merchant');
+                          setIsGroupedMenuOpen(false);
+                        }}
+                        className={`py-1.5 px-2 rounded-lg text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 text-xs ${
+                          isMerchant
+                            ? 'bg-blue-600 text-white font-black shadow-xs'
+                            : 'text-slate-700 hover:bg-white/60 font-bold'
+                        }`}
+                      >
+                        <Store className="w-3.5 h-3.5" />
+                        <span>{isRtl ? 'تاجر' : 'Vendeur'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Primary Action Button: Publish Ad */}
+                  <div className="px-3 py-2 border-b border-slate-100">
                     <button
+                      type="button"
                       onClick={() => {
-                        setIsLangMenuOpen(false);
+                        setIsGroupedMenuOpen(false);
+                        onAttemptCreateAd();
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs rounded-xl shadow-xs transition-all cursor-pointer"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      <span>{t('btnPublishAd')}</span>
+                    </button>
+                  </div>
+
+                  {/* Navigation Links inside Grouped Menu */}
+                  <div className="py-1 px-1.5 space-y-0.5 text-xs font-bold text-slate-700">
+                    {/* Orders (Buyer or Merchant) */}
+                    {isMerchant ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsGroupedMenuOpen(false);
+                            onViewChange('dashboard');
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-colors cursor-pointer ${
+                            activeView === 'dashboard' ? 'bg-blue-50 text-blue-700 font-black' : 'hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <LayoutDashboard className="w-4 h-4 text-blue-600" />
+                            <span>{t('navDashboard')}</span>
+                          </div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsGroupedMenuOpen(false);
+                            onViewChange('profile');
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-colors cursor-pointer ${
+                            activeView === 'profile' ? 'bg-purple-50 text-purple-700 font-black' : 'hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Store className="w-4 h-4 text-purple-600" />
+                            <span>{t('navProfile')}</span>
+                          </div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsGroupedMenuOpen(false);
+                            onViewChange('orders');
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-colors cursor-pointer ${
+                            activeView === 'orders' ? 'bg-emerald-50 text-emerald-700 font-black' : 'hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <ShoppingBag className="w-4 h-4 text-emerald-600" />
+                            <span>{t('navCustomerOrders')}</span>
+                          </div>
+                          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full">
+                            {ordersCount}
+                          </span>
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsGroupedMenuOpen(false);
+                          onViewChange('buyer_orders');
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-colors cursor-pointer ${
+                          activeView === 'buyer_orders' ? 'bg-emerald-50 text-emerald-700 font-black' : 'hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Package className="w-4 h-4 text-emerald-600" />
+                          <span>{t('navMyOrders')}</span>
+                        </div>
+                        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full">
+                          {ordersCount}
+                        </span>
+                      </button>
+                    )}
+
+                    {/* Pricing Plans */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsGroupedMenuOpen(false);
+                        onViewChange('pricing');
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-colors cursor-pointer ${
+                        activeView === 'pricing' ? 'bg-amber-50 text-amber-800 font-black' : 'hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <CreditCard className="w-4 h-4 text-amber-500" />
+                        <span>{t('navPlans')}</span>
+                      </div>
+                      <span className="text-[10px] text-amber-700 font-black bg-amber-100 px-1.5 py-0.5 rounded-md">
+                        $20 - $45
+                      </span>
+                    </button>
+
+                    {/* Saved Ads */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsGroupedMenuOpen(false);
+                        onOpenSaved();
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Bookmark className="w-4 h-4 text-blue-500" />
+                        <span>{t('navSaved')}</span>
+                      </div>
+                      <span className="bg-slate-100 text-slate-700 text-[10px] font-black px-2 py-0.5 rounded-full">
+                        {savedCount}
+                      </span>
+                    </button>
+
+                    {/* Notifications button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsNotifOpen(!isNotifOpen);
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Bell className="w-4 h-4 text-rose-500" />
+                        <span>الإشعارات والليدات</span>
+                      </div>
+                      {unreadNotifsCount > 0 ? (
+                        <span className="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse">
+                          {unreadNotifsCount}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-400">0</span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Nested Notifications Dropdown if open */}
+                  {isNotifOpen && (
+                    <div className="px-2 pt-1 pb-2 border-t border-slate-100">
+                      <NotificationsDropdown
+                        isOpen={isNotifOpen}
+                        onClose={() => setIsNotifOpen(false)}
+                        notifications={notifications}
+                        onMarkAllAsRead={onMarkAllNotificationsRead}
+                        onClearAll={onClearNotifications}
+                        onSelectNotification={(notif) => {
+                          onSelectNotification(notif);
+                          setIsNotifOpen(false);
+                          setIsGroupedMenuOpen(false);
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Languages Selector Row */}
+                  <div className="px-3 pt-2 pb-2 border-t border-slate-100">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                        <Globe className="w-3 h-3 text-slate-400" />
+                        <span>{t('settingsLanguageTab')}</span>
+                      </span>
+                      <span className="text-[10px] font-bold text-blue-600">
+                        {currentLangInfo.nativeName}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-1">
+                      {SUPPORTED_LANGUAGES.map((lang) => {
+                        const isSelected = language === lang.code;
+                        return (
+                          <button
+                            key={lang.code}
+                            type="button"
+                            onClick={() => handleSelectLang(lang.code)}
+                            className={`py-1 px-1 rounded-lg text-center text-[10px] font-black transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-blue-600 text-white shadow-2xs'
+                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                            }`}
+                            title={lang.name}
+                          >
+                            <span className="block text-xs">{lang.flag}</span>
+                            <span className="block truncate">{lang.nativeName}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Footer Settings & Auth */}
+                  <div className="pt-1.5 px-2 border-t border-slate-100 space-y-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsGroupedMenuOpen(false);
                         onOpenSettings();
                       }}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 text-[11px] text-blue-600 hover:bg-blue-50 rounded-lg font-bold transition-colors cursor-pointer"
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                     >
-                      <Settings className="w-3.5 h-3.5" />
-                      <span>{t('settingsTitle')}</span>
+                      <div className="flex items-center gap-2">
+                        <Settings className="w-4 h-4 text-slate-500" />
+                        <span>{t('settingsTitle')}</span>
+                      </div>
+                      <ChevronLeft className={`w-3.5 h-3.5 text-slate-400 ${isRtl ? '' : 'rotate-180'}`} />
                     </button>
+
+                    {currentUser && currentUser.isLoggedIn ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsGroupedMenuOpen(false);
+                          onLogout();
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>{t('logout')} ({currentUser.fullName})</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsGroupedMenuOpen(false);
+                          onOpenAuth();
+                        }}
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                      >
+                        <User className="w-4 h-4 text-blue-400" />
+                        <span>{t('loginRegister')}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
             </div>
-
-            {/* Direct Settings Button (Paramètres) */}
-            <button
-              onClick={onOpenSettings}
-              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors relative cursor-pointer"
-              title={t('settingsTitle')}
-            >
-              <Settings className="w-4 h-4 text-slate-600 hover:rotate-45 transition-transform" />
-            </button>
-
-            {/* Notification Bell */}
-            <div className="relative">
-              <button
-                onClick={() => setIsNotifOpen(!isNotifOpen)}
-                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors relative cursor-pointer"
-                title="الإشعارات والليدات"
-              >
-                <Bell className="w-4 h-4" />
-                {unreadNotifsCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-600 text-white text-[10px] font-black flex items-center justify-center shadow-xs tabular-nums animate-pulse">
-                    {unreadNotifsCount}
-                  </span>
-                )}
-              </button>
-
-              <NotificationsDropdown
-                isOpen={isNotifOpen}
-                onClose={() => setIsNotifOpen(false)}
-                notifications={notifications}
-                onMarkAllAsRead={onMarkAllNotificationsRead}
-                onClearAll={onClearNotifications}
-                onSelectNotification={(notif) => {
-                  onSelectNotification(notif);
-                  setIsNotifOpen(false);
-                }}
-              />
-            </div>
-
-            {/* Dual Account Switcher: Buyer vs Merchant */}
-            <div className="flex items-center p-0.5 bg-slate-100 rounded-xl border border-slate-200 shadow-2xs">
-              <button
-                type="button"
-                onClick={() => (onSelectRole ? onSelectRole('buyer') : onSwitchRole())}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                  !isMerchant
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                }`}
-                title="تفعيل حساب الزبون / المشتري (للتسوق والطلبيات)"
-              >
-                <User className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">{isRtl ? 'حساب الزبون' : 'Client'}</span>
-                <span className="md:hidden">{isRtl ? 'زبون' : 'Client'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => (onSelectRole ? onSelectRole('merchant') : onSwitchRole())}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                  isMerchant
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                }`}
-                title="تفعيل حساب التاجر / البائع (للإعلانات والمبيعات)"
-              >
-                <Store className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">{isRtl ? 'حساب التاجر' : 'Vendeur'}</span>
-                <span className="md:hidden">{isRtl ? 'تاجر' : 'Vendeur'}</span>
-              </button>
-            </div>
-
-            {/* User Account Capsule */}
-            {currentUser && currentUser.isLoggedIn ? (
-              <div className="flex items-center gap-1.5 p-1 pr-2 bg-slate-100 hover:bg-slate-200/80 rounded-full transition-colors">
-                <button
-                  onClick={() => onViewChange(isMerchant ? 'profile' : 'buyer_orders')}
-                  className={`flex items-center gap-1.5 cursor-pointer ${isRtl ? 'text-right' : 'text-left'}`}
-                  title={isMerchant ? t('merchantAccount') : t('buyerAccount')}
-                >
-                  <img
-                    src={currentUser.avatar}
-                    alt={currentUser.fullName}
-                    className="w-7 h-7 rounded-full object-cover border border-slate-200"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className={`hidden lg:block leading-tight ${isRtl ? 'text-right' : 'text-left'}`}>
-                    <span className="text-[11px] font-bold text-slate-900 block truncate max-w-[85px]">
-                      {isMerchant ? currentUser.businessName : currentUser.fullName}
-                    </span>
-                    <span className={`text-[9px] font-black block ${isMerchant ? 'text-blue-600' : 'text-emerald-600'}`}>
-                      {isMerchant ? t('merchantAccount') : t('buyerAccount')}
-                    </span>
-                  </div>
-                </button>
-
-                <button
-                  onClick={onLogout}
-                  title={t('logout')}
-                  className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={onOpenAuth}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-lg transition-colors cursor-pointer"
-              >
-                <User className="w-3.5 h-3.5 text-blue-600" />
-                <span>{t('loginRegister')}</span>
-              </button>
-            )}
-
-            {/* Primary Action Button (Guard protected) */}
-            <button
-              onClick={onAttemptCreateAd}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">{t('btnPublishAd')}</span>
-            </button>
           </div>
-        </div>
-
-        {/* Mobile secondary navigation strip */}
-        <div className="flex items-center gap-1.5 py-2 overflow-x-auto lg:hidden border-t border-slate-100 text-xs font-bold">
-          {/* Mobile Quick Role Switcher */}
-          <div className="flex items-center p-0.5 bg-slate-200/80 rounded-lg shrink-0">
-            <button
-              onClick={() => (onSelectRole ? onSelectRole('buyer') : onSwitchRole())}
-              className={`px-2 py-1 rounded-md text-[11px] font-black cursor-pointer ${
-                !isMerchant ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-700 hover:bg-white/50'
-              }`}
-            >
-              🛒 زبون
-            </button>
-            <button
-              onClick={() => (onSelectRole ? onSelectRole('merchant') : onSwitchRole())}
-              className={`px-2 py-1 rounded-md text-[11px] font-black cursor-pointer ${
-                isMerchant ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-700 hover:bg-white/50'
-              }`}
-            >
-              💼 تاجر
-            </button>
-          </div>
-
-          <button
-            onClick={() => onViewChange('feed')}
-            className={`px-3 py-1.5 rounded-lg whitespace-nowrap cursor-pointer ${
-              activeView === 'feed' ? 'bg-blue-600 text-white' : 'text-slate-600 bg-slate-100'
-            }`}
-          >
-            {t('navFeed')}
-          </button>
-
-          <button
-            onClick={() => onViewChange('videos')}
-            className={`px-3 py-1.5 rounded-lg whitespace-nowrap flex items-center gap-1 cursor-pointer ${
-              activeView === 'videos' ? 'bg-rose-600 text-white' : 'text-slate-600 bg-slate-100'
-            }`}
-          >
-            <Video className="w-3 h-3" />
-            <span>{t('navVideos')}</span>
-          </button>
-
-          {isMerchant ? (
-            <>
-              <button
-                onClick={() => onViewChange('dashboard')}
-                className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${
-                  activeView === 'dashboard' ? 'bg-blue-600 text-white' : 'text-slate-600 bg-slate-100'
-                }`}
-              >
-                {t('navDashboard')}
-              </button>
-              <button
-                onClick={() => onViewChange('profile')}
-                className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${
-                  activeView === 'profile' ? 'bg-blue-600 text-white' : 'text-slate-600 bg-slate-100'
-                }`}
-              >
-                {t('navProfile')}
-              </button>
-              <button
-                onClick={() => onViewChange('orders')}
-                className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${
-                  activeView === 'orders' ? 'bg-blue-600 text-white' : 'text-slate-600 bg-slate-100'
-                }`}
-              >
-                {t('navCustomerOrders')} ({ordersCount})
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => onViewChange('buyer_orders')}
-              className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${
-                activeView === 'buyer_orders' ? 'bg-blue-600 text-white' : 'text-slate-600 bg-slate-100'
-              }`}
-            >
-              {t('navMyOrders')} ({ordersCount})
-            </button>
-          )}
-
-          <button
-            onClick={() => onViewChange('pricing')}
-            className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${
-              activeView === 'pricing' ? 'bg-blue-600 text-white' : 'text-amber-700 bg-amber-50'
-            }`}
-          >
-            {t('navPlans')}
-          </button>
-          <button
-            onClick={onOpenSaved}
-            className="px-3 py-1.5 rounded-lg whitespace-nowrap text-slate-600 bg-slate-100"
-          >
-            {t('navSaved')} ({savedCount})
-          </button>
-
-          {/* Settings in mobile bar */}
-          <button
-            onClick={onOpenSettings}
-            className="px-3 py-1.5 rounded-lg whitespace-nowrap text-slate-700 bg-slate-200/80 flex items-center gap-1"
-          >
-            <Settings className="w-3 h-3" />
-            <span>{t('settingsTitle')}</span>
-          </button>
         </div>
       </div>
     </header>

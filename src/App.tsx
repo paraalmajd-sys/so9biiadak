@@ -431,6 +431,13 @@ export default function App() {
         onSwitchRole={handleSwitchRole}
         onSelectRole={handleSelectRole}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenStories={() => {
+          if (stories && stories.length > 0) {
+            setActiveStory(stories[0]);
+          }
+          setActiveView('feed');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
       />
 
       {/* Main Container */}

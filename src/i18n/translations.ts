@@ -51,6 +51,10 @@ export interface Translations {
   
   // Navigation
   navFeed: string;
+  navPosts: string;
+  navStories: string;
+  navReels: string;
+  navMenu: string;
   navVideos: string;
   navDashboard: string;
   navProfile: string;
@@ -189,7 +193,11 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     appName: 'SO9FIADAK',
     appTagline: 'سوق في يدك · إعلانات المنتجات',
     searchPlaceholder: 'ابحث عن منتج، متجر، أو مدينة مغربية...',
-    navFeed: 'الإعلانات (Feed)',
+    navFeed: 'المنشورات (Feed)',
+    navPosts: 'المنشورات',
+    navStories: 'الستوريات',
+    navReels: 'الريلز',
+    navMenu: 'القائمة',
     navVideos: 'فيديوهات السلع (Watch)',
     navDashboard: 'لوحة التاجر',
     navProfile: 'صفحة المتجر',
@@ -320,7 +328,11 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     appName: 'SO9FIADAK',
     appTagline: 'سوق في يدك · كلشي فبلاصتو سلعة واعرة',
     searchPlaceholder: 'قلب على سلعة، حانوت، ولا مدينتك بالمغرب...',
-    navFeed: 'المنشورات والسلعة (Feed)',
+    navFeed: 'المنشورات (Les Posts)',
+    navPosts: 'المنشورات',
+    navStories: 'الستوريات',
+    navReels: 'الريلز',
+    navMenu: 'الموني',
     navVideos: 'فيديوهات السلعة (Watch)',
     navDashboard: 'لوحة التاجر (Dashboard)',
     navProfile: 'الحانوت ديالي',
@@ -451,7 +463,11 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     appName: 'SO9FIADAK',
     appTagline: 'Place de marché sociale · Annonces Produits au Maroc',
     searchPlaceholder: 'Rechercher un produit, une boutique ou une ville au Maroc...',
-    navFeed: 'Fil d’annonces (Feed)',
+    navFeed: 'Posts & Feed',
+    navPosts: 'Posts',
+    navStories: 'Stories',
+    navReels: 'Reels',
+    navMenu: 'Menu',
     navVideos: 'Vidéos & Reels (Watch)',
     navDashboard: 'Dashboard Vendeur',
     navProfile: 'Page Boutique',
@@ -582,7 +598,11 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     appName: 'SO9FIADAK',
     appTagline: 'Social Marketplace · Product Ads & Deals in Morocco',
     searchPlaceholder: 'Search product ads, verified stores, or cities in Morocco...',
-    navFeed: 'Ads Feed',
+    navFeed: 'Posts Feed',
+    navPosts: 'Posts',
+    navStories: 'Stories',
+    navReels: 'Reels',
+    navMenu: 'Menu',
     navVideos: 'Product Videos (Watch)',
     navDashboard: 'Merchant Dashboard',
     navProfile: 'Store Page',

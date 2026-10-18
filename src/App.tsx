@@ -109,17 +109,22 @@ export default function App() {
     setIsCreateAdOpen(true);
   };
 
-  // Toggle role between Buyer and Merchant
-  const handleSwitchRole = () => {
-    if (currentUser?.role === 'merchant') {
+  // Explicit role selection (Buyer vs Merchant)
+  const handleSelectRole = (role: 'buyer' | 'merchant') => {
+    if (role === 'buyer') {
       setCurrentUser(DEFAULT_BUYER_ACCOUNT);
-      showToast('تم التبديل إلى حساب مشتري عادي (للتسوق والطلب)');
+      showToast('تم التفعيل: حساب الزبون / المشتري (للتسوق والطلبيات)');
       setActiveView('feed');
     } else {
       setCurrentUser(DEFAULT_MERCHANT_ACCOUNT);
-      showToast('تم التبديل إلى حساب تاجر معتمد (باقة Pro مفعلة)');
+      showToast('تم التفعيل: حساب التاجر / البائع (لوحة التحكم ونشر الإعلانات)');
       setActiveView('dashboard');
     }
+  };
+
+  // Toggle role between Buyer and Merchant
+  const handleSwitchRole = () => {
+    handleSelectRole(currentUser?.role === 'merchant' ? 'buyer' : 'merchant');
   };
 
   // Like handler
@@ -410,6 +415,7 @@ export default function App() {
         onClearNotifications={handleClearNotifications}
         onSelectNotification={handleSelectNotification}
         onSwitchRole={handleSwitchRole}
+        onSelectRole={handleSelectRole}
         onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
@@ -486,6 +492,8 @@ export default function App() {
                   currentUser={currentUser}
                   onOpenSubscriptionModal={() => setIsSubscriptionRequiredOpen(true)}
                   onOpenSettings={() => setIsSettingsOpen(true)}
+                  onSelectRole={handleSelectRole}
+                  onSwitchRole={handleSwitchRole}
                 />
               </div>
             </div>

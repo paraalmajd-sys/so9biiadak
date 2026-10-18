@@ -63,7 +63,16 @@ export default function App() {
   const [campaigns, setCampaigns] = useState<AdCampaign[]>(INITIAL_CAMPAIGNS);
   const [orders, setOrders] = useState<CustomerOrder[]>(INITIAL_ORDERS);
   const [profile, setProfile] = useState<PageProfile>(DEFAULT_PAGE_PROFILE);
-  const [currentUser, setCurrentUser] = useState<UserAccount | null>(DEFAULT_MERCHANT_ACCOUNT);
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
+    try {
+      const saved = localStorage.getItem('so9fiadak_account_role');
+      if (saved === 'merchant') return DEFAULT_MERCHANT_ACCOUNT;
+      if (saved === 'buyer') return DEFAULT_BUYER_ACCOUNT;
+    } catch {
+      // fallback
+    }
+    return DEFAULT_BUYER_ACCOUNT;
+  });
   const [notifications, setNotifications] = useState<SellerNotification[]>(INITIAL_NOTIFICATIONS);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -111,9 +120,14 @@ export default function App() {
 
   // Explicit role selection (Buyer vs Merchant)
   const handleSelectRole = (role: 'buyer' | 'merchant') => {
+    try {
+      localStorage.setItem('so9fiadak_account_role', role);
+    } catch {
+      // ignore
+    }
     if (role === 'buyer') {
       setCurrentUser(DEFAULT_BUYER_ACCOUNT);
-      showToast('تم التفعيل: حساب الزبون / المشتري (للتسوق والطلبيات)');
+      showToast('تم التفعيل: حساب الزبون / المشتري (للتسوق والطلبيات المباشرة)');
       setActiveView('feed');
     } else {
       setCurrentUser(DEFAULT_MERCHANT_ACCOUNT);

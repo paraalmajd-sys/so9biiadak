@@ -15,6 +15,12 @@ export const getLocalVideo = (filename: string): string => {
   return `${cleanBase}videos/${filename}`;
 };
 
+export const getLocalImage = (filename: string): string => {
+  const base = import.meta.env.BASE_URL || './';
+  const cleanBase = base.endsWith('/') ? base : `${base}/`;
+  return `${cleanBase}images/${filename}`;
+};
+
 export const INITIAL_STORIES: Story[] = [
   {
     id: 's1',
@@ -22,7 +28,7 @@ export const INITIAL_STORIES: Story[] = [
     brandAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
     title: 'فيديو تجربة ساعة التيتانيوم',
     discount: '-45%',
-    image: '/src/assets/images/product_smartwatch_ultra_1792240155179.jpg',
+    image: getLocalImage('product_smartwatch_ultra_1792240155179.jpg'),
     videoUrl: getLocalVideo('product-preview-1.mp4'),
     fallbackVideoUrl: 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4',
     productAdId: 'ad-1',
@@ -34,7 +40,7 @@ export const INITIAL_STORIES: Story[] = [
     brandAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=120&q=80',
     title: 'فيديو نتائج سيروم الأركان',
     discount: '-30%',
-    image: '/src/assets/images/product_moroccan_argan_oil_1792240155621.jpg',
+    image: getLocalImage('product_moroccan_argan_oil_1792240155621.jpg'),
     videoUrl: getLocalVideo('product-preview-2.mp4'),
     fallbackVideoUrl: 'https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_1MB.mp4',
     productAdId: 'ad-2',
@@ -46,7 +52,7 @@ export const INITIAL_STORIES: Story[] = [
     brandAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80',
     title: 'فيديو تجربة عزل الصوت ANC',
     discount: '-50%',
-    image: '/src/assets/images/product_wireless_earbuds_1792240155858.jpg',
+    image: getLocalImage('product_wireless_earbuds_1792240155858.jpg'),
     videoUrl: getLocalVideo('product-preview-3.mp4'),
     fallbackVideoUrl: 'https://test-videos.co.uk/vids/sintel/mp4/h264/360/Sintel_360_10s_1MB.mp4',
     productAdId: 'ad-3',
@@ -58,7 +64,7 @@ export const INITIAL_STORIES: Story[] = [
     brandAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80',
     title: 'فيديو ورشة خياطة الجلد الطبيعي',
     discount: '-35%',
-    image: '/src/assets/images/product_leather_sneakers_1792240155657.jpg',
+    image: getLocalImage('product_leather_sneakers_1792240155657.jpg'),
     videoUrl: getLocalVideo('product-preview-4.mp4'),
     fallbackVideoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
     productAdId: 'ad-4',
@@ -96,12 +102,12 @@ export const INITIAL_ADS: ProductAd[] = [
     rating: 4.9,
     reviewsCount: 312,
     images: [
-      '/src/assets/images/product_smartwatch_ultra_1792240155179.jpg',
-      '/src/assets/images/product_wireless_earbuds_1792240155858.jpg'
+      getLocalImage('product_smartwatch_ultra_1792240155179.jpg'),
+      getLocalImage('product_wireless_earbuds_1792240155858.jpg')
     ],
     videoUrl: getLocalVideo('product-preview-1.mp4'),
     fallbackVideoUrl: 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4',
-    videoPoster: '/src/assets/images/product_smartwatch_ultra_1792240155179.jpg',
+    videoPoster: getLocalImage('product_smartwatch_ultra_1792240155179.jpg'),
     mediaType: 'video',
     videoDuration: '0:34',
     videoViews: '18.4k',
@@ -173,11 +179,11 @@ export const INITIAL_ADS: ProductAd[] = [
     rating: 5.0,
     reviewsCount: 489,
     images: [
-      '/src/assets/images/product_moroccan_argan_oil_1792240155621.jpg'
+      getLocalImage('product_moroccan_argan_oil_1792240155621.jpg')
     ],
     videoUrl: getLocalVideo('product-preview-2.mp4'),
     fallbackVideoUrl: 'https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_1MB.mp4',
-    videoPoster: '/src/assets/images/product_moroccan_argan_oil_1792240155621.jpg',
+    videoPoster: getLocalImage('product_moroccan_argan_oil_1792240155621.jpg'),
     mediaType: 'video',
     videoDuration: '0:28',
     videoViews: '24.1k',
@@ -248,11 +254,11 @@ export const INITIAL_ADS: ProductAd[] = [
     rating: 4.8,
     reviewsCount: 215,
     images: [
-      '/src/assets/images/product_wireless_earbuds_1792240155858.jpg'
+      getLocalImage('product_wireless_earbuds_1792240155858.jpg')
     ],
     videoUrl: getLocalVideo('product-preview-3.mp4'),
     fallbackVideoUrl: 'https://test-videos.co.uk/vids/sintel/mp4/h264/360/Sintel_360_10s_1MB.mp4',
-    videoPoster: '/src/assets/images/product_wireless_earbuds_1792240155858.jpg',
+    videoPoster: getLocalImage('product_wireless_earbuds_1792240155858.jpg'),
     mediaType: 'video',
     videoDuration: '0:38',
     videoViews: '9.4k',
@@ -314,11 +320,11 @@ export const INITIAL_ADS: ProductAd[] = [
     rating: 4.9,
     reviewsCount: 378,
     images: [
-      '/src/assets/images/product_leather_sneakers_1792240155657.jpg'
+      getLocalImage('product_leather_sneakers_1792240155657.jpg')
     ],
     videoUrl: getLocalVideo('product-preview-4.mp4'),
     fallbackVideoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
-    videoPoster: '/src/assets/images/product_leather_sneakers_1792240155657.jpg',
+    videoPoster: getLocalImage('product_leather_sneakers_1792240155657.jpg'),
     mediaType: 'video',
     videoDuration: '0:42',
     videoViews: '12.8k',
@@ -361,7 +367,7 @@ export const DEFAULT_PAGE_PROFILE: PageProfile = {
   name: 'SO9FIADAK Official Store',
   handle: '@so9fiadak_official',
   avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
-  coverImage: '/src/assets/images/page_cover_banner_1792240702380.jpg',
+  coverImage: getLocalImage('page_cover_banner_1792240702380.jpg'),
   category: 'متجر تجارة إلكترونية وإعلانات مموّلة',
   bio: 'الصفحة الرسمية لـ SO9FIADAK بالمغرب. نوفر أرقى المنتجات الحصرية بأسعار الجملة، مع التوصيل المجاني السريع لجميع المدن المغربية 24/48 ساعة والدفع عند الاستلام بعد معاينة السلعة.',
   verified: true,
@@ -383,7 +389,7 @@ export const INITIAL_CAMPAIGNS: AdCampaign[] = [
     id: 'camp-1',
     adId: 'ad-1',
     title: 'حملة ساعة Ultra Titanium الذكية (فيديو + صور)',
-    productImage: '/src/assets/images/product_smartwatch_ultra_1792240155179.jpg',
+    productImage: getLocalImage('product_smartwatch_ultra_1792240155179.jpg'),
     status: 'active',
     dailyBudget: 150,
     spent: 1850,
@@ -398,7 +404,7 @@ export const INITIAL_CAMPAIGNS: AdCampaign[] = [
     id: 'camp-2',
     adId: 'ad-2',
     title: 'باك العناية بالأركان الحيوي (فيديو ريلز تجربة)',
-    productImage: '/src/assets/images/product_moroccan_argan_oil_1792240155621.jpg',
+    productImage: getLocalImage('product_moroccan_argan_oil_1792240155621.jpg'),
     status: 'active',
     dailyBudget: 120,
     spent: 1440,
@@ -413,7 +419,7 @@ export const INITIAL_CAMPAIGNS: AdCampaign[] = [
     id: 'camp-3',
     adId: 'ad-3',
     title: 'حملة سماعات Pro Wireless ANC - تخفيض 50%',
-    productImage: '/src/assets/images/product_wireless_earbuds_1792240155858.jpg',
+    productImage: getLocalImage('product_wireless_earbuds_1792240155858.jpg'),
     status: 'active',
     dailyBudget: 100,
     spent: 900,
@@ -428,7 +434,7 @@ export const INITIAL_CAMPAIGNS: AdCampaign[] = [
     id: 'camp-4',
     adId: 'ad-4',
     title: 'سنيكرز الجلد الطبيعي الفاسي (فيديو ورشة فاس)',
-    productImage: '/src/assets/images/product_leather_sneakers_1792240155657.jpg',
+    productImage: getLocalImage('product_leather_sneakers_1792240155657.jpg'),
     status: 'paused',
     dailyBudget: 80,
     spent: 640,
@@ -446,7 +452,7 @@ export const INITIAL_ORDERS: CustomerOrder[] = [
     id: 'SO9-8921',
     adId: 'ad-1',
     productTitle: 'ساعة Ultra Titanium الذكية الرياضية',
-    productImage: '/src/assets/images/product_smartwatch_ultra_1792240155179.jpg',
+    productImage: getLocalImage('product_smartwatch_ultra_1792240155179.jpg'),
     customerName: 'يوسف بنسليمان',
     phone: '0661239845',
     city: 'الدار البيضاء',
@@ -461,7 +467,7 @@ export const INITIAL_ORDERS: CustomerOrder[] = [
     id: 'SO9-8922',
     adId: 'ad-2',
     productTitle: 'باك العناية الفاخر: زيت الأركان المغربي مع سيروم نضارة الوجه',
-    productImage: '/src/assets/images/product_moroccan_argan_oil_1792240155621.jpg',
+    productImage: getLocalImage('product_moroccan_argan_oil_1792240155621.jpg'),
     customerName: 'سناء الإدريسي',
     phone: '0672114490',
     city: 'الرباط',
@@ -476,7 +482,7 @@ export const INITIAL_ORDERS: CustomerOrder[] = [
     id: 'SO9-8923',
     adId: 'ad-4',
     productTitle: 'حذاء سنيكرز Retro 1978 من الجلد الطبيعي (مقاس 43)',
-    productImage: '/src/assets/images/product_leather_sneakers_1792240155657.jpg',
+    productImage: getLocalImage('product_leather_sneakers_1792240155657.jpg'),
     customerName: 'حمزة المراكشي',
     phone: '0655883201',
     city: 'مراكش',
@@ -491,7 +497,7 @@ export const INITIAL_ORDERS: CustomerOrder[] = [
     id: 'SO9-8924',
     adId: 'ad-3',
     productTitle: 'سماعات Pro Wireless ANC بعزل صوتي احترافي',
-    productImage: '/src/assets/images/product_wireless_earbuds_1792240155858.jpg',
+    productImage: getLocalImage('product_wireless_earbuds_1792240155858.jpg'),
     customerName: 'فاطمة الزهراء',
     phone: '0663449912',
     city: 'طنجة',
@@ -506,7 +512,7 @@ export const INITIAL_ORDERS: CustomerOrder[] = [
     id: 'SO9-8925',
     adId: 'ad-1',
     productTitle: 'ساعة Ultra Titanium الذكية الرياضية',
-    productImage: '/src/assets/images/product_smartwatch_ultra_1792240155179.jpg',
+    productImage: getLocalImage('product_smartwatch_ultra_1792240155179.jpg'),
     customerName: 'طارق العلمي',
     phone: '0619887766',
     city: 'فاس',

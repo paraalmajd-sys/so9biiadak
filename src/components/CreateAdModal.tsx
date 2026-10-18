@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ProductAd } from '../types';
-import { CITIES, CATEGORIES } from '../data/mockData';
+import { CITIES, CATEGORIES, getLocalImage } from '../data/mockData';
 import { X, Plus, Sparkles, Image as ImageIcon, Video, Check } from 'lucide-react';
 
 interface CreateAdModalProps {
@@ -12,19 +12,19 @@ interface CreateAdModalProps {
 const PRESET_IMAGES = [
   {
     name: 'ساعة ذكية فاخرة',
-    url: '/src/assets/images/product_smartwatch_ultra_1792240155179.jpg',
+    url: getLocalImage('product_smartwatch_ultra_1792240155179.jpg'),
   },
   {
     name: 'زيت أركان وسيروم طبيعي',
-    url: '/src/assets/images/product_moroccan_argan_oil_1792240155621.jpg',
+    url: getLocalImage('product_moroccan_argan_oil_1792240155621.jpg'),
   },
   {
     name: 'سماعات Pro عازلة للصوت',
-    url: '/src/assets/images/product_wireless_earbuds_1792240155858.jpg',
+    url: getLocalImage('product_wireless_earbuds_1792240155858.jpg'),
   },
   {
     name: 'حذاء سنيكرز جلد أصيل',
-    url: '/src/assets/images/product_leather_sneakers_1792240155657.jpg',
+    url: getLocalImage('product_leather_sneakers_1792240155657.jpg'),
   },
 ];
 

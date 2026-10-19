@@ -34,6 +34,7 @@ import { ProductVideosView } from './components/ProductVideosView';
 import { BuyerOrdersView } from './components/BuyerOrdersView';
 import { CreativeLandingBuilderView } from './components/CreativeLandingBuilderView';
 import { ProductSimulatorAccountingView } from './components/ProductSimulatorAccountingView';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { QuickOrderModal } from './components/QuickOrderModal';
 import { CreateAdModal } from './components/CreateAdModal';
 import { StoryViewerModal } from './components/StoryViewerModal';
@@ -501,19 +502,23 @@ export default function App() {
 
         {/* VIEW 7: Dedicated Creative Studio & Landing Page Builder */}
         {activeView === 'creatives' && (
-          <CreativeLandingBuilderView
-            ads={ads}
-            onOpenCreateAd={handleAttemptCreateAd}
-            onQuickOrder={(targetAd) => setQuickOrderAd(targetAd)}
-          />
+          <ErrorBoundary fallbackTitle="استوديو صفحات الهبوط والكرياتيف">
+            <CreativeLandingBuilderView
+              ads={ads}
+              onOpenCreateAd={handleAttemptCreateAd}
+              onQuickOrder={(targetAd) => setQuickOrderAd(targetAd)}
+            />
+          </ErrorBoundary>
         )}
 
         {/* VIEW 8: Dedicated Product Market Fit Simulator, Profit Portfolio & Invoicing / Accounting */}
         {activeView === 'simulator' && (
-          <ProductSimulatorAccountingView
-            ads={ads}
-            onOpenCreateAd={handleAttemptCreateAd}
-          />
+          <ErrorBoundary fallbackTitle="محاكي الأرباح وفحص السوق والمحاسبة">
+            <ProductSimulatorAccountingView
+              ads={ads}
+              onOpenCreateAd={handleAttemptCreateAd}
+            />
+          </ErrorBoundary>
         )}
 
         {/* VIEW 6: Facebook Product Ads Feed View (Default) */}

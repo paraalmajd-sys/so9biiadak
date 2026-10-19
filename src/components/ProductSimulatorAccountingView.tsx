@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Invoice, ProductAd } from '../types';
-import { INITIAL_INVOICES, CITIES } from '../data/mockData';
+import { INITIAL_INVOICES, CITIES, getLocalImage } from '../data/mockData';
 import {
   Calculator,
   FileText,
@@ -30,6 +30,21 @@ import {
   Clock,
   Sparkles,
   AlertTriangle,
+  UploadCloud,
+  Check,
+  BadgeAlert,
+  BarChart3,
+  Users,
+  Compass,
+  ArrowRight,
+  HelpCircle,
+  CreditCard,
+  Percent,
+  FolderOpen,
+  Globe,
+  Layers,
+  ChevronRight,
+  ShoppingBag,
 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -38,68 +53,605 @@ interface ProductSimulatorAccountingViewProps {
   onOpenCreateAd: () => void;
 }
 
+// Hierarchical Location & Market Data
+interface CityMarketDetail {
+  name: string;
+  monthlyConsumption: string;
+  expectedConversionRate: string;
+  deliveryRate: number;
+  avgCpa: string;
+  deliveryTime: string;
+  purchasingPower: string;
+  peakHours: string;
+  bestSellingAngle: string;
+  topCouriers: string;
+  logisticNotes: string;
+}
+
+interface RegionMarketData {
+  id: string;
+  name: string;
+  cities: Record<string, CityMarketDetail>;
+}
+
+interface CountryMarketData {
+  id: string;
+  name: string;
+  flag: string;
+  currency: string;
+  regions: Record<string, RegionMarketData>;
+}
+
+const GLOBAL_MARKETS_HIERARCHY: Record<string, CountryMarketData> = {
+  morocco: {
+    id: 'morocco',
+    name: 'المملكة المغربية',
+    flag: '🇲🇦',
+    currency: 'DH',
+    regions: {
+      casablanca_settat: {
+        id: 'casablanca_settat',
+        name: 'جهة الدار البيضاء - سطات',
+        cities: {
+          casablanca: {
+            name: 'الدار البيضاء (Grand Casablanca)',
+            monthlyConsumption: '48,000 إلى 65,000 طلبية شهرياً',
+            expectedConversionRate: '6.8% - 9.2%',
+            deliveryRate: 84,
+            avgCpa: '28 - 40 DH',
+            deliveryTime: '24 ساعة (توصيل فوري)',
+            purchasingPower: 'عالية جداً',
+            peakHours: 'من 13:00 إلى 15:30 ومن 21:00 إلى 00:30',
+            bestSellingAngle: 'السرعة الفائقة في التوصيل وفخامة وجودة المنتج الأصلية',
+            topCouriers: 'Cathedis, Sendit, Ozone Express, Amana',
+            logisticNotes: 'أكبر سوق استهلاكي بالمغرب، نسبة تسليم ممتازة مع الموزعين المحليين.',
+          },
+          mohammedia: {
+            name: 'المحمدية (Mohammédia)',
+            monthlyConsumption: '8,500 إلى 12,000 طلبية شهرياً',
+            expectedConversionRate: '6.2% - 8.0%',
+            deliveryRate: 83,
+            avgCpa: '26 - 36 DH',
+            deliveryTime: '24 ساعة',
+            purchasingPower: 'عالية',
+            peakHours: 'من 12:30 إلى 15:00 ومن 20:30 إلى 23:30',
+            bestSellingAngle: 'الجودة والضمان مع التوصيل المجاني',
+            topCouriers: 'Sendit, Cathedis, Ozone',
+            logisticNotes: 'قربها من كازا يضمن استلاماً سريعاً وتكلفة إرسال منخفضة.',
+          },
+          settat_berrechid: {
+            name: 'برشيد وسطات (Berrechid & Settat)',
+            monthlyConsumption: '7,000 إلى 10,000 طلبية شهرياً',
+            expectedConversionRate: '5.5% - 7.2%',
+            deliveryRate: 78,
+            avgCpa: '22 - 32 DH',
+            deliveryTime: '24 إلى 48 ساعة',
+            purchasingPower: 'متوسطة إلى عالية',
+            peakHours: 'من 13:00 إلى 16:00 ومن 20:00 إلى 23:00',
+            bestSellingAngle: 'عروض التوفير وباقات 2 حبات بسعر مميز',
+            topCouriers: 'Amana, Cathedis',
+            logisticNotes: 'زبائن يفضلون الدفع نقداً بعد فحص محتوى الكولية.',
+          },
+        },
+      },
+      rabat_sale_kenitra: {
+        id: 'rabat_sale_kenitra',
+        name: 'جهة الرباط - سلا - القنيطرة',
+        cities: {
+          rabat: {
+            name: 'الرباط العاصمة (Rabat)',
+            monthlyConsumption: '22,000 إلى 32,000 طلبية شهرياً',
+            expectedConversionRate: '6.5% - 8.8%',
+            deliveryRate: 83,
+            avgCpa: '26 - 38 DH',
+            deliveryTime: '24 ساعة',
+            purchasingPower: 'عالية جداً',
+            peakHours: 'من 12:30 إلى 14:30 ومن 20:30 إلى 23:30',
+            bestSellingAngle: 'الأصالة، الضمان، وراحة البال مع الدفع بعد المعاينة',
+            topCouriers: 'Cathedis, Amana Express',
+            logisticNotes: 'نسبة روتور ضعيفة واستقرار وظيفي ممتاز للزبناء.',
+          },
+          sale_temara: {
+            name: 'سلا وتمارة (Salé & Témara)',
+            monthlyConsumption: '18,000 إلى 26,000 طلبية شهرياً',
+            expectedConversionRate: '5.8% - 7.5%',
+            deliveryRate: 80,
+            avgCpa: '24 - 34 DH',
+            deliveryTime: '24 إلى 48 ساعة',
+            purchasingPower: 'متوسطة إلى عالية',
+            peakHours: 'من 13:00 إلى 15:30 ومن 21:00 إلى 23:30',
+            bestSellingAngle: 'حل المشاكل اليومية وتوفير الوقت والمجهود',
+            topCouriers: 'Sendit, Ozone, Amana',
+            logisticNotes: 'كثافة سكانية عالية تضمن مبيعات يومية مستمرة.',
+          },
+          kenitra: {
+            name: 'القنيطرة (Kénitra)',
+            monthlyConsumption: '12,000 إلى 17,000 طلبية شهرياً',
+            expectedConversionRate: '6.0% - 7.8%',
+            deliveryRate: 81,
+            avgCpa: '22 - 32 DH',
+            deliveryTime: '24 إلى 48 ساعة',
+            purchasingPower: 'عالية (مدينة صناعية سريعة النمو)',
+            peakHours: 'من 13:00 إلى 16:00 ومن 20:30 إلى 23:00',
+            bestSellingAngle: 'أحدث المنتجات العصرية مع التوصيل السريع',
+            topCouriers: 'Cathedis, Ozone, Amana',
+            logisticNotes: 'إقبال ممتاز على سلع التجميل والأجهزة الذكية.',
+          },
+        },
+      },
+      tangier_tetouan_alhoceima: {
+        id: 'tangier_tetouan_alhoceima',
+        name: 'جهة طنجة - تطوان - الحسيمة',
+        cities: {
+          tangier: {
+            name: 'طنجة (Tanger Métropole)',
+            monthlyConsumption: '25,000 إلى 36,000 طلبية شهرياً',
+            expectedConversionRate: '6.4% - 8.5%',
+            deliveryRate: 81,
+            avgCpa: '24 - 35 DH',
+            deliveryTime: '24 إلى 48 ساعة',
+            purchasingPower: 'عالية',
+            peakHours: 'من 14:00 إلى 17:00 ومن 21:30 إلى 01:00',
+            bestSellingAngle: 'الموضة الحديثة والسلع التكنولوجية الفاخرة',
+            topCouriers: 'Sendit, Ozone, Amana',
+            logisticNotes: 'سوق ديناميكي سريع التجاوب مع إعلانات تيك توك وريلز.',
+          },
+          tetouan: {
+            name: 'تطوان والمضيق (Tétouan & M\'diq)',
+            monthlyConsumption: '10,000 إلى 15,000 طلبية شهرياً',
+            expectedConversionRate: '5.8% - 7.6%',
+            deliveryRate: 79,
+            avgCpa: '20 - 30 DH',
+            deliveryTime: '48 ساعة',
+            purchasingPower: 'عالية',
+            peakHours: 'من 14:30 إلى 17:30 ومن 22:00 إلى 00:30',
+            bestSellingAngle: 'الأناقة والعروض المحدودة',
+            topCouriers: 'Cathedis, Amana',
+            logisticNotes: 'نشاط استهلاكي مرتفع جداً طيلة فترات السنة.',
+          },
+          larache_ksar: {
+            name: 'العرائش والقصر الكبير (Larache & Ksar El Kebir)',
+            monthlyConsumption: '6,000 إلى 9,000 طلبية شهرياً',
+            expectedConversionRate: '5.2% - 6.8%',
+            deliveryRate: 76,
+            avgCpa: '18 - 28 DH',
+            deliveryTime: '48 ساعة',
+            purchasingPower: 'متوسطة',
+            peakHours: 'من 13:00 إلى 16:00 ومن 20:00 إلى 22:30',
+            bestSellingAngle: 'توفير السلعة النادرة مع إيصالها حتى لباب المنزل',
+            topCouriers: 'Amana, Chrono Diali',
+            logisticNotes: 'CPA إعلاني رخيص وفرصة جيدة لتحقيق مبيعات مربحة.',
+          },
+        },
+      },
+      marrakech_safi: {
+        id: 'marrakech_safi',
+        name: 'جهة مراكش - آسفي',
+        cities: {
+          marrakech: {
+            name: 'مراكش الحمراء (Marrakech)',
+            monthlyConsumption: '20,000 إلى 28,000 طلبية شهرياً',
+            expectedConversionRate: '6.2% - 8.3%',
+            deliveryRate: 78,
+            avgCpa: '22 - 34 DH',
+            deliveryTime: '48 ساعة',
+            purchasingPower: 'عالية',
+            peakHours: 'من 15:00 إلى 18:00 ومن 21:00 إلى 00:00',
+            bestSellingAngle: 'عروض التوفير، التخفيضات الكبرى، ومنتجات الصيف والعناية',
+            topCouriers: 'Cathedis, Sendit, Amana',
+            logisticNotes: 'تجاوب قياسي مع عروض 2 حبات مع شحن فابور.',
+          },
+          safi_essaouira: {
+            name: 'آسفي والصويرة (Safi & Essaouira)',
+            monthlyConsumption: '7,500 إلى 11,000 طلبية شهرياً',
+            expectedConversionRate: '5.4% - 7.0%',
+            deliveryRate: 75,
+            avgCpa: '18 - 28 DH',
+            deliveryTime: '48 إلى 72 ساعة',
+            purchasingPower: 'متوسطة',
+            peakHours: 'من 13:30 إلى 16:00 ومن 20:00 إلى 22:30',
+            bestSellingAngle: 'أفضل جودة بأفضل سعر مع الدفع عند الاستلام',
+            topCouriers: 'Amana, Ghazala',
+            logisticNotes: 'تأكيد الطلبيات عبر الواتساب يرفع نسبة التسليم لـ +82%.',
+          },
+        },
+      },
+      souss_massa: {
+        id: 'souss_massa',
+        name: 'جهة سوس - ماسة',
+        cities: {
+          agadir: {
+            name: 'أكادير الكبير (Agadir & Inezgane)',
+            monthlyConsumption: '16,000 إلى 24,000 طلبية شهرياً',
+            expectedConversionRate: '6.3% - 8.2%',
+            deliveryRate: 79,
+            avgCpa: '20 - 32 DH',
+            deliveryTime: '48 ساعة',
+            purchasingPower: 'متوسطة إلى عالية',
+            peakHours: 'من 14:00 إلى 17:30 ومن 21:00 إلى 23:45',
+            bestSellingAngle: 'الأجهزة المنزلية الذكية، منتجات التجميل والزيوت الأصلية',
+            topCouriers: 'Cathedis, Amana, Sendit',
+            logisticNotes: 'منطقة تجارية بامتياز ونسبة استلام ممتازة مع الموزعين.',
+          },
+          taroudant_tiznit: {
+            name: 'تارودانت وتيزنيت (Taroudant & Tiznit)',
+            monthlyConsumption: '6,500 إلى 9,500 طلبية شهرياً',
+            expectedConversionRate: '5.2% - 6.9%',
+            deliveryRate: 74,
+            avgCpa: '16 - 26 DH',
+            deliveryTime: '48 إلى 72 ساعة',
+            purchasingPower: 'متوسطة',
+            peakHours: 'من 12:30 إلى 15:00 ومن 19:30 إلى 22:00',
+            bestSellingAngle: 'الأصالة وحل المشاكل اليومية',
+            topCouriers: 'Amana, Stop Desk',
+            logisticNotes: 'اعتماد نظام الاستلام من الوكالة (Stop Desk) فعال جداً.',
+          },
+        },
+      },
+      fes_meknes: {
+        id: 'fes_meknes',
+        name: 'جهة فاس - مكناس',
+        cities: {
+          fes: {
+            name: 'فاس (Fès)',
+            monthlyConsumption: '15,000 إلى 22,000 طلبية شهرياً',
+            expectedConversionRate: '5.6% - 7.4%',
+            deliveryRate: 75,
+            avgCpa: '18 - 29 DH',
+            deliveryTime: '48 ساعة',
+            purchasingPower: 'حساسة للسعر (Sensible au prix)',
+            peakHours: 'من 13:00 إلى 16:00 ومن 20:30 إلى 23:00',
+            bestSellingAngle: 'أفضل سعر مقابل الجودة، سعر بيع أقل من 299 درهم هو الأنجح',
+            topCouriers: 'Cathedis, Sendit, Amana',
+            logisticNotes: 'الزبون يقارن الأسعار بدقة، لذلك العروض الواضحة تحقق أعلى مبيعات.',
+          },
+          meknes: {
+            name: 'مكناس (Meknès)',
+            monthlyConsumption: '10,000 إلى 15,000 طلبية شهرياً',
+            expectedConversionRate: '5.7% - 7.5%',
+            deliveryRate: 76,
+            avgCpa: '18 - 28 DH',
+            deliveryTime: '48 ساعة',
+            purchasingPower: 'متوسطة',
+            peakHours: 'من 13:00 إلى 15:30 ومن 20:30 إلى 22:45',
+            bestSellingAngle: 'تخفيضات العائلة والأجهزة المنزلية العملية',
+            topCouriers: 'Amana, Cathedis, Ozone',
+            logisticNotes: 'تجاوب ممتاز مع السلع العملية التي تحل مشكل المطبخ أو البيت.',
+          },
+        },
+      },
+      oriental: {
+        id: 'oriental',
+        name: 'جهة الشرق (Région de l\'Oriental)',
+        cities: {
+          oujda: {
+            name: 'وجدة والناظور (Oujda & Nador)',
+            monthlyConsumption: '14,000 إلى 20,000 طلبية شهرياً',
+            expectedConversionRate: '5.8% - 7.7%',
+            deliveryRate: 75,
+            avgCpa: '17 - 28 DH',
+            deliveryTime: '48 إلى 72 ساعة',
+            purchasingPower: 'متوسطة إلى عالية',
+            peakHours: 'من 12:30 إلى 15:00 ومن 20:00 إلى 23:00',
+            bestSellingAngle: 'توفر السلع المميزة وغير المتواجدة محلياً',
+            topCouriers: 'Cathedis, Amana Express',
+            logisticNotes: 'تكلفة نقرة رخيصة جداً ومعدل تفاعل قوي على فيسبوك.',
+          },
+        },
+      },
+      sahara_provinces: {
+        id: 'sahara_provinces',
+        name: 'الصحراء المغربية (الأقاليم الجنوبية)',
+        cities: {
+          laayoune: {
+            name: 'العيون والسمارة (Laâyoune & Smara)',
+            monthlyConsumption: '9,000 إلى 13,000 طلبية شهرياً',
+            expectedConversionRate: '6.5% - 8.8%',
+            deliveryRate: 74,
+            avgCpa: '16 - 26 DH (CPA رخيص)',
+            deliveryTime: '72 ساعة',
+            purchasingPower: 'عالية جداً',
+            peakHours: 'من 14:00 إلى 18:00 ومن 21:00 إلى 01:00',
+            bestSellingAngle: 'المنتجات الفاخرة، العطور الأصلية، ومستلزمات السفر والتخييم',
+            topCouriers: 'Amana Express, Barid Al-Maghrib',
+            logisticNotes: 'قدرة شرائية مرتفعة جداً للمنتجات ذات الجودة العالية.',
+          },
+          dakhla: {
+            name: 'الداخلة ووادي الذهب (Dakhla)',
+            monthlyConsumption: '5,000 إلى 7,500 طلبية شهرياً',
+            expectedConversionRate: '6.4% - 8.6%',
+            deliveryRate: 73,
+            avgCpa: '15 - 25 DH',
+            deliveryTime: '72 ساعة',
+            purchasingPower: 'عالية جداً',
+            peakHours: 'من 15:00 إلى 19:00 ومن 21:30 إلى 01:00',
+            bestSellingAngle: 'جودة السلعة الحصرية مع التوصيل حتى أقصى الجنوب',
+            topCouriers: 'Amana Express',
+            logisticNotes: 'تنسيق مسبق لموعد الاستلام مع الزبون يضمن نجاح العملية.',
+          },
+        },
+      },
+    },
+  },
+  saudi_arabia: {
+    id: 'saudi_arabia',
+    name: 'المملكة العربية السعودية',
+    flag: '🇸🇦',
+    currency: 'SAR',
+    regions: {
+      riyadh_region: {
+        id: 'riyadh_region',
+        name: 'منطقة الرياض',
+        cities: {
+          riyadh_city: {
+            name: 'مدينة الرياض (Riyadh)',
+            monthlyConsumption: '85,000 إلى 120,000 طلبية شهرياً',
+            expectedConversionRate: '7.5% - 10.2%',
+            deliveryRate: 87,
+            avgCpa: '45 - 70 SAR',
+            deliveryTime: '24 إلى 48 ساعة',
+            purchasingPower: 'عالية جداً',
+            peakHours: 'من 14:00 إلى 17:00 ومن 22:00 إلى 03:00 فجراً',
+            bestSellingAngle: 'الضمان الذهبي، الفخامة، وشحن فوري لباب المنزل',
+            topCouriers: 'SMSA, Aramex, J&T Express, SPL',
+            logisticNotes: 'أكبر سوق COD وهامش ربح صافي يفوق 100 ريال بالقطعة.',
+          },
+        },
+      },
+      makkah_region: {
+        id: 'makkah_region',
+        name: 'منطقة مكة المكرمة',
+        cities: {
+          jeddah_city: {
+            name: 'جدة وعروس البحر الأحمر (Jeddah)',
+            monthlyConsumption: '65,000 إلى 90,000 طلبية شهرياً',
+            expectedConversionRate: '7.2% - 9.8%',
+            deliveryRate: 86,
+            avgCpa: '40 - 65 SAR',
+            deliveryTime: '24 إلى 48 ساعة',
+            purchasingPower: 'عالية جداً',
+            peakHours: 'من 15:00 إلى 18:00 ومن 22:30 إلى 02:30',
+            bestSellingAngle: 'العناية الشخصية، الأجهزة الذكية، والأزياء',
+            topCouriers: 'SMSA, Aramex, J&T',
+            logisticNotes: 'تفاعل ممتاز جداً مع إعلانات سناب شات وتيك توك.',
+          },
+        },
+      },
+    },
+  },
+  uae: {
+    id: 'uae',
+    name: 'الإمارات العربية المتحدة',
+    flag: '🇦🇪',
+    currency: 'AED',
+    regions: {
+      dubai_emirate: {
+        id: 'dubai_emirate',
+        name: 'إمارة دبي',
+        cities: {
+          dubai_city: {
+            name: 'مدينة دبي (Dubai)',
+            monthlyConsumption: '55,000 إلى 80,000 طلبية شهرياً',
+            expectedConversionRate: '7.8% - 10.5%',
+            deliveryRate: 89,
+            avgCpa: '50 - 80 AED',
+            deliveryTime: '24 ساعة (نفس اليوم)',
+            purchasingPower: 'عالية جداً',
+            peakHours: 'من 13:00 إلى 16:00 ومن 20:30 إلى 00:00',
+            bestSellingAngle: 'الأصالة، السرعة الخاطفة، والرفاهية العصرية',
+            topCouriers: 'Fetchr, Aramex, Emirates Post',
+            logisticNotes: 'أعلى معدل تسليم في المنطقة وخدمة توصيل فورية.',
+          },
+        },
+      },
+    },
+  },
+};
+
 export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccountingViewProps> = ({
   ads,
   onOpenCreateAd,
 }) => {
   const { isRtl } = useLanguage();
-  const [activeSuiteTab, setActiveSuiteTab] = useState<'simulator' | 'pricing_portfolio' | 'accounting'>('pricing_portfolio');
+  // Default to market fit simulator or keep user's active tab
+  const [activeSuiteTab, setActiveSuiteTab] = useState<'simulator' | 'pricing_portfolio' | 'accounting'>('simulator');
 
   // ==========================================
   // 1. PRODUCT MARKET FIT SIMULATOR STATE
   // ==========================================
-  const [targetMarket, setTargetMarket] = useState<'casablanca_rabat' | 'regions_small' | 'national' | 'gulf_export'>('national');
-  const [productWeight, setProductWeight] = useState<'light' | 'medium' | 'heavy'>('light'); // <500g, 500g-2kg, >2kg
-  const [isFragile, setIsFragile] = useState(false);
-  const [hasWowFactor, setHasWowFactor] = useState(true);
+  const [simProductImage, setSimProductImage] = useState<string>(getLocalImage('product_smartwatch_ultra_1792240155179.jpg'));
+  const simFileInputRef = useRef<HTMLInputElement>(null);
+
+  const [simProductName, setSimProductName] = useState('سيروم الشعر الطبيعي بالزيوت المعالجة');
+  const [simNiche, setSimNiche] = useState<string>('كوسميتيك ومواد التجميل والعناية (Cosmétiques)');
+  const [simTargetGender, setSimTargetGender] = useState<'نساء' | 'رجال' | 'الجميع'>('نساء');
+  const [simTargetAge, setSimTargetAge] = useState<string>('25-35 سنة');
+  const [simProblemSolved, setSimProblemSolved] = useState<string>('تساقط الشعر والفراغات وتقوية البصيلات');
+  const [simSellingPrice, setSimSellingPrice] = useState<number>(249);
   const [simPurchasePrice, setSimPurchasePrice] = useState<number>(65);
-  const [simSellingPrice, setSimSellingPrice] = useState<number>(299);
-  const [competitionLevel, setCompetitionLevel] = useState<'low' | 'medium' | 'high'>('medium');
+  const [simWeight, setSimWeight] = useState<'light' | 'medium' | 'heavy'>('light');
+  const [simIsFragile, setSimIsFragile] = useState(false);
+  const [simHasWowFactor, setSimHasWowFactor] = useState(true);
 
-  // Market Fit Score Calculation
-  const marketFitResult = useMemo(() => {
-    let score = 50;
+  // Structured Cascading Dropdowns for Market Selection: Country -> Region -> City
+  const [selectedCountryKey, setSelectedCountryKey] = useState<string>('morocco');
+  const [selectedRegionKey, setSelectedRegionKey] = useState<string>('casablanca_settat');
+  const [selectedCityKey, setSelectedCityKey] = useState<string>('casablanca');
 
-    // Margin evaluation
-    const grossMargin = simSellingPrice - simPurchasePrice;
-    if (grossMargin > 180) score += 20;
-    else if (grossMargin > 120) score += 12;
-    else if (grossMargin < 80) score -= 15;
+  // Bulletproof Country, Region, and City Objects (cannot crash or be undefined)
+  const safeCountryKey = (selectedCountryKey in GLOBAL_MARKETS_HIERARCHY) ? selectedCountryKey : 'morocco';
+  const currentCountry = GLOBAL_MARKETS_HIERARCHY[safeCountryKey] || GLOBAL_MARKETS_HIERARCHY['morocco'];
 
-    // Weight & fragility
-    if (productWeight === 'light') score += 10;
-    else if (productWeight === 'heavy') score -= 12;
-    if (isFragile) score -= 12;
+  const availableRegionKeys = Object.keys(currentCountry.regions || {});
+  const safeRegionKey = availableRegionKeys.includes(selectedRegionKey) ? selectedRegionKey : (availableRegionKeys[0] || 'casablanca_settat');
+  const currentRegion = (currentCountry.regions && currentCountry.regions[safeRegionKey]) || Object.values(currentCountry.regions || {})[0] || {
+    id: 'default_reg',
+    name: 'جهة الدار البيضاء - سطات',
+    cities: {}
+  };
 
-    // Wow factor
-    if (hasWowFactor) score += 12;
+  const availableCityKeys = Object.keys(currentRegion.cities || {});
+  const safeCityKey = availableCityKeys.includes(selectedCityKey) ? selectedCityKey : (availableCityKeys[0] || 'casablanca');
+  const currentCity = (currentRegion.cities && currentRegion.cities[safeCityKey]) || Object.values(currentRegion.cities || {})[0] || {
+    name: 'الدار البيضاء (Grand Casablanca)',
+    monthlyConsumption: '48,000 إلى 65,000 طلبية شهرياً',
+    expectedConversionRate: '6.8% - 9.2%',
+    deliveryRate: 84,
+    avgCpa: '28 - 40 DH',
+    deliveryTime: '24 ساعة (توصيل فوري)',
+    purchasingPower: 'عالية جداً' as const,
+    peakHours: 'من 13:00 إلى 15:30 ومن 21:00 إلى 00:30',
+    bestSellingAngle: 'السرعة الفائقة في التوصيل وفخامة وجودة المنتج الأصلية',
+    topCouriers: 'Cathedis, Sendit, Ozone Express, Amana',
+    logisticNotes: 'أكبر سوق استهلاكي بالمغرب، نسبة تسليم ممتازة مع الموزعين المحليين.',
+  };
 
-    // Competition
-    if (competitionLevel === 'low') score += 10;
-    else if (competitionLevel === 'high') score -= 10;
+  // Handle Country Change safely
+  const handleCountryChange = (cKey: string) => {
+    setSelectedCountryKey(cKey);
+    const country = GLOBAL_MARKETS_HIERARCHY[cKey];
+    if (country && country.regions) {
+      const regKeys = Object.keys(country.regions);
+      if (regKeys.length > 0) {
+        const firstRegKey = regKeys[0];
+        setSelectedRegionKey(firstRegKey);
+        const cityKeys = Object.keys(country.regions[firstRegKey]?.cities || {});
+        if (cityKeys.length > 0) {
+          setSelectedCityKey(cityKeys[0]);
+        }
+      }
+    }
+  };
 
-    // Market bonus
-    if (targetMarket === 'national') score += 5;
+  // Handle Region Change safely
+  const handleRegionChange = (rKey: string) => {
+    setSelectedRegionKey(rKey);
+    const region = currentCountry.regions?.[rKey];
+    if (region && region.cities) {
+      const cityKeys = Object.keys(region.cities);
+      if (cityKeys.length > 0) {
+        setSelectedCityKey(cityKeys[0]);
+      }
+    }
+  };
 
-    const clampedScore = Math.max(15, Math.min(98, score));
-    let status: 'ممتاز للبدء فوراً' | 'جيد مع بعض التحسينات' | 'مخاطرة عالية' = 'جيد مع بعض التحسينات';
-    let statusColor = 'text-amber-600 bg-amber-50 border-amber-200';
+  // Handle real image upload from PC/Phone
+  const handleSimImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setSimProductImage(event.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
-    if (clampedScore >= 75) {
-      status = 'ممتاز للبدء فوراً';
-      statusColor = 'text-emerald-700 bg-emerald-50 border-emerald-300';
-    } else if (clampedScore < 50) {
-      status = 'مخاطرة عالية';
-      statusColor = 'text-rose-700 bg-rose-50 border-rose-300';
+  // Sync with store products fast
+  const handlePickStoreProduct = (ad: ProductAd) => {
+    setSimProductName(ad.title);
+    if (ad.images && ad.images[0]) {
+      setSimProductImage(ad.images[0]);
+    }
+    setSimSellingPrice(ad.price);
+    setSimPurchasePrice(Math.round(ad.price * 0.32));
+    setSimNiche(ad.category);
+  };
+
+  // Dynamic Product Market Fit Verdict Algorithm (Accurately factors in City, Niche, and Margins)
+  const marketFitVerdict = useMemo(() => {
+    let score = 55;
+    const reasons: { text: string; positive: boolean }[] = [];
+
+    // Margin
+    const margin = simSellingPrice - simPurchasePrice;
+    if (margin >= 160) {
+      score += 20;
+      reasons.push({ text: `هامش ربح إجمالي ممتاز (+${margin} ${currentCountry.currency}) يغطي تكاليف الإعلانات والشحن والروتور بأريحية تامة.`, positive: true });
+    } else if (margin >= 100) {
+      score += 10;
+      reasons.push({ text: `هامش ربح جيد (+${margin} ${currentCountry.currency})، يتطلب إبقاء تكلفة الإعلان CPA أقل من 35 ${currentCountry.currency}.`, positive: true });
+    } else {
+      score -= 22;
+      reasons.push({ text: `هامش ربح ضعيف (${margin} ${currentCountry.currency}) يشكل خطورة ولا يغطي مصاريف التوصيل وإرجاع السلع.`, positive: false });
+    }
+
+    // City & Regional Performance
+    if (currentCity.deliveryRate >= 82) {
+      score += 12;
+      reasons.push({ text: `نسبة تسليم قياسية في ${currentCity.name} (${currentCity.deliveryRate}%) تضمن سيولة سريعة ومصاريف روتور منخفضة.`, positive: true });
+    } else if (currentCity.deliveryRate >= 76) {
+      score += 5;
+      reasons.push({ text: `نسبة تسليم جيدة في ${currentCity.name} (${currentCity.deliveryRate}%) مع متابعة هاتفية للزبائن.`, positive: true });
+    } else {
+      score -= 10;
+      reasons.push({ text: `نسبة التسليم في ${currentCity.name} (${currentCity.deliveryRate}%) تتطلب تأكيداً صارماً بالواتساب قبل الشحن.`, positive: false });
+    }
+
+    // Purchasing Power & Price Sensitivity
+    if (currentCity.purchasingPower === 'عالية جداً' || currentCity.purchasingPower === 'عالية') {
+      score += 8;
+      reasons.push({ text: `قدرة شرائية مرتفعة في ${currentCity.name} تدعم سعر البيع المقترح (${simSellingPrice} ${currentCountry.currency}).`, positive: true });
+    } else if (currentCity.purchasingPower === 'حساسة للسعر' && simSellingPrice > 250) {
+      score -= 12;
+      reasons.push({ text: `الزبناء في ${currentCity.name} حساسون للسعر؛ يُنصح بتقديم عرض تخفيضي أو باقة 2 حبات بسعر مغرٍ.`, positive: false });
+    }
+
+    // Niche Demand in COD
+    const lowerNiche = (simNiche || '').toLowerCase();
+    if (lowerNiche.includes('كوسميتيك') || lowerNiche.includes('تجميل') || lowerNiche.includes('مكمل') || lowerNiche.includes('عناية')) {
+      score += 10;
+      reasons.push({ text: 'قطاع الكوزميتيك والمكملات يشهد أعلى معدلات إعادة الشراء وهو الأكثر طلباً في الدفع عند الاستلام بالمغرب.', positive: true });
+    }
+
+    // Logistics & Weight
+    if (simWeight === 'light') {
+      score += 6;
+      reasons.push({ text: 'وزن السلعة خفيف (<500g) مما يقلل تكاليف الشحن ويسرع تسليم الموزعين.', positive: true });
+    } else if (simWeight === 'heavy') {
+      score -= 12;
+      reasons.push({ text: 'وزن السلعة ثقيل (+2kg) يرفع تسعيرة شركة الشحن ويقلل هامش الربح.', positive: false });
+    }
+
+    if (simIsFragile) {
+      score -= 10;
+      reasons.push({ text: 'السلعة قابلة للكسر مما يقتضي تغليفاً محمياً لتفادي الإرجاع والتلف أثناء النقل.', positive: false });
+    } else {
+      score += 4;
+      reasons.push({ text: 'السلعة مقاومة للصدمات وتتحمل ظروف الشحن بدون مخاطر تلف.', positive: true });
+    }
+
+    if (simHasWowFactor) {
+      score += 8;
+      reasons.push({ text: 'عنصر الإبهار يجلب نقرات رخيصة وتفاعلاً واسعاً على إعلانات فيسبوك وتيك توك.', positive: true });
+    }
+
+    const finalScore = Math.max(25, Math.min(99, score));
+
+    let verdictType: 'success' | 'warning' | 'danger' = 'success';
+    let verdictTitle = '🟢 نعم! المنتج مناسب ومربح جداً لهذا السوق';
+    let verdictDesc = `المؤشرات ممتازة جداً في ${currentCity.name}. المنتج يملك هامشاً وافياً وزاوية بيع قوية تضمن أرباحاً صافية ونسبة استلام مرتفعة.`;
+
+    if (finalScore < 55) {
+      verdictType = 'danger';
+      verdictTitle = '🔴 مخاطرة عالية وغير مناسب حالياً لهذا السوق';
+      verdictDesc = `المنتج يواجه صعوبة في ${currentCity.name} إما بسبب ضعف هامش الربح مقارنة بتكاليف الشحن والإعلانات، أو حساسية الزبائن للسعر.`;
+    } else if (finalScore < 75) {
+      verdictType = 'warning';
+      verdictTitle = '🟡 مناسب بشروط مع ضرورة ضبط العرض والسعر';
+      verdictDesc = `يمكن تحقيق أرباح، شريطة تقديم باقة 2 حبات (Pack Promo) لرفع قيمة السلة وتأكيد العنوان هاتفياً قبل خروج الشحنة.`;
     }
 
     return {
-      score: clampedScore,
-      status,
-      statusColor,
-      grossMargin,
+      score: finalScore,
+      verdictType,
+      verdictTitle,
+      verdictDesc,
+      reasons,
     };
-  }, [simPurchasePrice, simSellingPrice, productWeight, isFragile, hasWowFactor, competitionLevel, targetMarket]);
+  }, [simSellingPrice, simPurchasePrice, simWeight, simIsFragile, simHasWowFactor, simNiche, currentCity, currentCountry]);
 
   // ==========================================
   // 2. PRICING & WALLET PORTFOLIO CALCULATOR
@@ -107,35 +659,34 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
   const [calcPurchasePrice, setCalcPurchasePrice] = useState<number>(75);
   const [calcSellingPrice, setCalcSellingPrice] = useState<number>(299);
   const [calcShippingCost, setCalcShippingCost] = useState<number>(35);
-  const [calcReturnCost, setCalcReturnCost] = useState<number>(15); // Retour fee
-  const [calcCpaAds, setCalcCpaAds] = useState<number>(45); // Ad cost per lead/order
-  const [calcConfirmRate, setCalcConfirmRate] = useState<number>(85); // % confirmed
-  const [calcDeliveryRate, setCalcDeliveryRate] = useState<number>(75); // % delivered
-  const [calcPackaging, setCalcPackaging] = useState<number>(8); // Packaging + Call center
-  const [calcOrdersVolume, setCalcOrdersVolume] = useState<number>(300); // Monthly volume
+  const [calcReturnCost, setCalcReturnCost] = useState<number>(15);
+  const [calcCpaAds, setCalcCpaAds] = useState<number>(45);
+  const [calcConfirmRate, setCalcConfirmRate] = useState<number>(85);
+  const [calcDeliveryRate, setCalcDeliveryRate] = useState<number>(75);
+  const [calcPackaging, setCalcPackaging] = useState<number>(8);
+  const [calcOrdersVolume, setCalcOrdersVolume] = useState<number>(300);
 
   // Deep COD Profit Metrics
   const profitMetrics = useMemo(() => {
-    // 100 leads generated
-    const totalLeads = calcOrdersVolume;
-    const confirmedOrders = Math.round(totalLeads * (calcConfirmRate / 100));
-    const deliveredOrders = Math.round(confirmedOrders * (calcDeliveryRate / 100));
-    const returnedOrders = confirmedOrders - deliveredOrders;
+    const totalLeads = Math.max(1, Number(calcOrdersVolume) || 100);
+    const confirmedOrders = Math.round(totalLeads * ((Number(calcConfirmRate) || 80) / 100));
+    const deliveredOrders = Math.round(confirmedOrders * ((Number(calcDeliveryRate) || 75) / 100));
+    const returnedOrders = Math.max(0, confirmedOrders - deliveredOrders);
 
-    // Incomings
-    const totalRevenue = deliveredOrders * calcSellingPrice;
-
-    // Costs
-    const productCost = deliveredOrders * calcPurchasePrice; // Only delivered items lose inventory cost (returned items return to stock)
-    const adCost = totalLeads * calcCpaAds;
-    const shippingDeliveredCost = deliveredOrders * calcShippingCost;
-    const shippingReturnsCost = returnedOrders * calcReturnCost;
-    const packagingCost = confirmedOrders * calcPackaging;
+    const totalRevenue = deliveredOrders * (Number(calcSellingPrice) || 0);
+    const productCost = deliveredOrders * (Number(calcPurchasePrice) || 0);
+    const adCost = totalLeads * (Number(calcCpaAds) || 0);
+    const shippingDeliveredCost = deliveredOrders * (Number(calcShippingCost) || 0);
+    const shippingReturnsCost = returnedOrders * (Number(calcReturnCost) || 0);
+    const packagingCost = confirmedOrders * (Number(calcPackaging) || 0);
 
     const totalExpenses = productCost + adCost + shippingDeliveredCost + shippingReturnsCost + packagingCost;
     const netProfitTotal = totalRevenue - totalExpenses;
     const netProfitPerDelivered = deliveredOrders > 0 ? Math.round(netProfitTotal / deliveredOrders) : 0;
     const profitMarginPercent = totalRevenue > 0 ? Math.round((netProfitTotal / totalRevenue) * 100) : 0;
+
+    const totalCostWithoutAds = productCost + shippingDeliveredCost + shippingReturnsCost + packagingCost;
+    const breakevenCpa = totalLeads > 0 ? Math.round((totalRevenue - totalCostWithoutAds) / totalLeads) : 0;
 
     return {
       totalLeads,
@@ -151,6 +702,7 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
       shippingTotalCost: shippingDeliveredCost + shippingReturnsCost,
       productCost,
       packagingCost,
+      breakevenCpa,
     };
   }, [
     calcPurchasePrice,
@@ -172,6 +724,7 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
   const [invoiceSearchQuery, setInvoiceSearchQuery] = useState('');
   const [selectedInvoiceForModal, setSelectedInvoiceForModal] = useState<Invoice | null>(null);
   const [isCreateInvoiceOpen, setIsCreateInvoiceOpen] = useState(false);
+  const [invoiceFormError, setInvoiceFormError] = useState<string | null>(null);
 
   // New Invoice form state
   const [newInvCustomer, setNewInvCustomer] = useState('');
@@ -181,367 +734,656 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
   const [newInvQty, setNewInvQty] = useState(1);
   const [newInvPrice, setNewInvPrice] = useState(299);
 
-  // Filtered invoices based on period and search
+  // Filtered invoices
   const filteredInvoices = useMemo(() => {
-    const todayStr = '2026-10-18';
-    const thisMonthStr = '2026-10';
-    const thisYearStr = '2026';
-
     return invoices.filter((inv) => {
-      // Period filter
-      if (accountingPeriod === 'daily' && inv.date !== todayStr) return false;
-      if (accountingPeriod === 'monthly' && inv.month !== thisMonthStr) return false;
-      if (accountingPeriod === 'yearly' && inv.year !== thisYearStr) return false;
-
-      // Search filter
       if (invoiceSearchQuery.trim()) {
         const q = invoiceSearchQuery.toLowerCase();
-        const matchesName = inv.customerName.toLowerCase().includes(q);
-        const matchesId = inv.id.toLowerCase().includes(q);
-        const matchesCity = inv.customerCity.toLowerCase().includes(q);
-        const matchesProduct = inv.productTitle.toLowerCase().includes(q);
+        const matchesName = (inv.customerName || '').toLowerCase().includes(q);
+        const matchesId = (inv.id || '').toLowerCase().includes(q);
+        const matchesCity = (inv.customerCity || '').toLowerCase().includes(q);
+        const matchesProduct = (inv.productTitle || '').toLowerCase().includes(q);
         return matchesName || matchesId || matchesCity || matchesProduct;
       }
-
       return true;
     });
-  }, [invoices, accountingPeriod, invoiceSearchQuery]);
+  }, [invoices, invoiceSearchQuery]);
 
   // Accounting aggregates
   const accountingTotals = useMemo(() => {
     const totalRevenue = filteredInvoices.reduce((sum, inv) => sum + (inv.status === 'paid' ? inv.totalAmount : 0), 0);
-    const paidCount = filteredInvoices.filter((inv) => inv.status === 'paid').length;
-    // Estimated direct COGS & ads cost at 50% for realistic profit
+    const totalOrders = filteredInvoices.length;
+    const paidCount = filteredInvoices.filter((i) => i.status === 'paid').length;
+    const pendingCount = filteredInvoices.filter((i) => i.status === 'pending').length;
+    const cancelledCount = filteredInvoices.filter((i) => i.status === 'cancelled').length;
+
     const estimatedExpenses = Math.round(totalRevenue * 0.48);
     const netProfit = totalRevenue - estimatedExpenses;
 
     return {
       totalRevenue,
+      totalOrders,
       paidCount,
+      pendingCount,
+      cancelledCount,
       estimatedExpenses,
       netProfit,
     };
   }, [filteredInvoices]);
 
-  const handleAddNewInvoice = (e: React.FormEvent) => {
+  const handleCreateNewInvoice = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newInvCustomer || !newInvPhone) {
-      alert('يرجى إدخال اسم الزبون ورقم الهاتف');
+    setInvoiceFormError(null);
+    if (!newInvCustomer.trim()) {
+      setInvoiceFormError('يرجى كتابة اسم الزبون الكامل');
+      return;
+    }
+    if (!newInvPhone.trim()) {
+      setInvoiceFormError('يرجى إدخال رقم الهاتف للتواصل مع الزبون');
       return;
     }
 
-    const newInv: Invoice = {
-      id: `FACT-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-      orderId: `SO9-${Math.floor(1000 + Math.random() * 9000)}`,
+    const createdInv: Invoice = {
+      id: `INV-${Math.floor(1000 + Math.random() * 9000)}`,
+      orderId: `ORD-${Math.floor(10000 + Math.random() * 90000)}`,
       customerName: newInvCustomer,
       customerPhone: newInvPhone,
       customerCity: newInvCity,
-      customerAddress: `شارع الحسن الثاني، ${newInvCity}`,
+      customerAddress: 'العنوان المسجل عند التأكيد',
       productTitle: newInvProduct,
       quantity: Number(newInvQty),
       unitPrice: Number(newInvPrice),
       shippingCost: 0,
-      totalAmount: Number(newInvPrice) * Number(newInvQty),
+      totalAmount: Number(newInvQty) * Number(newInvPrice),
       currency: 'DH',
-      date: '2026-10-18',
-      month: '2026-10',
-      year: '2026',
+      date: new Date().toISOString().slice(0, 10),
+      month: new Date().toISOString().slice(0, 7),
+      year: new Date().toISOString().slice(0, 4),
       status: 'paid',
-      sellerName: 'SO9FIADAK Official Store',
-      sellerPhone: '0612345678',
+      sellerName: 'متجر سوق في يدك الرسمي',
+      sellerPhone: '+212612345678',
       sellerCity: 'الدار البيضاء',
-      iceNumber: '002938172000045',
-      notes: 'تم الدفع نقداً عند الاستلام بعد معاينة المنتج.',
+      iceNumber: '003291823000045',
     };
 
-    setInvoices([newInv, ...invoices]);
+    setInvoices([createdInv, ...invoices]);
     setIsCreateInvoiceOpen(false);
-    setNewInvCustomer('');
-    setNewInvPhone('');
-    setSelectedInvoiceForModal(newInv);
+    setSelectedInvoiceForModal(createdInv);
   };
 
   return (
-    <div className="space-y-6 pb-12 animate-in fade-in duration-200" dir={isRtl ? 'rtl' : 'ltr'}>
-      {/* Suite Banner */}
-      <div className="bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mt-6 -mr-6 w-52 h-52 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-xs font-black border border-white/20">
-              <Calculator className="w-3.5 h-3.5 text-emerald-300" />
-              <span>محاكي التجارة الإلكترونية، حساب الأرباح، ونظام الفواتير</span>
+    <div className="space-y-5 pb-12 animate-in fade-in duration-200" dir={isRtl ? 'rtl' : 'ltr'}>
+      {/* ========================================================
+          1. COMPACT TOP DASHBOARD HEADER (مصغرة ومريحة حسب الطلب)
+         ======================================================== */}
+      <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center shrink-0 shadow-xs">
+            <Compass className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base sm:text-lg font-black tracking-tight text-white">
+                محاكاة الأرباح، فحص الأسواق والمحاسبة المالية
+              </h1>
+              <span className="hidden sm:inline-block text-[10px] font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                COD Suite Pro
+              </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
-              محاكي اختيار السلعة الرابحة، حساب أرباح المحفظة، والمحاسبة اليومية والشهرية
-            </h1>
-            <p className="text-emerald-100 text-xs sm:text-sm font-medium leading-relaxed">
-              اختر المنتج المناسب للسوق المستهدف، احسب بدقة تكاليف الإعلانات والشحن والروتور حتى تعرف شحال غيدي جيبك صافي (Portefeuille Net)، واستخرج نسخ الفواتير الرسمية لتتبع محاسبتك كاملة.
+            <p className="text-xs text-slate-400 font-medium">
+              اختر الأداة المطلوبة للانتقال المباشر وحساب المعطيات بدقة:
             </p>
           </div>
+        </div>
 
-          {/* Sub-tabs toggle */}
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <button
-              onClick={() => setActiveSuiteTab('pricing_portfolio')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeSuiteTab === 'pricing_portfolio'
-                  ? 'bg-white text-emerald-950 shadow-md'
-                  : 'bg-white/15 hover:bg-white/25 text-white'
-              }`}
-            >
-              <Wallet className="w-4 h-4 text-emerald-600" />
-              <span>حاسبة الأرباح والمحفظة</span>
-            </button>
-
-            <button
-              onClick={() => setActiveSuiteTab('simulator')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeSuiteTab === 'simulator'
-                  ? 'bg-white text-teal-950 shadow-md'
-                  : 'bg-white/15 hover:bg-white/25 text-white'
-              }`}
-            >
-              <Target className="w-4 h-4 text-teal-600" />
-              <span>محاكي ملائمة السوق (Market Fit)</span>
-            </button>
-
-            <button
-              onClick={() => setActiveSuiteTab('accounting')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeSuiteTab === 'accounting'
-                  ? 'bg-white text-slate-900 shadow-md'
-                  : 'bg-white/15 hover:bg-white/25 text-white'
-              }`}
-            >
-              <FileText className="w-4 h-4 text-blue-600" />
-              <span>المحاسبة والفواتير (Comptabilité)</span>
-            </button>
-          </div>
+        <div className="text-xs text-slate-400 font-bold bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700/60 shrink-0 flex items-center gap-2">
+          <Globe className="w-3.5 h-3.5 text-emerald-400" />
+          <span>السوق الحالي: {currentCountry.flag} {currentCountry.name}</span>
         </div>
       </div>
 
       {/* ========================================================
-          SUITE 1: PRICING & WALLET PORTFOLIO CALCULATOR
+          2. THE 3 DIRECT CHOICES ROW (الـ 3 ديال لو شوا من التحت مباشرة)
          ======================================================== */}
-      {activeSuiteTab === 'pricing_portfolio' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Inputs Column (7 cols) */}
-          <div className="lg:col-span-7 space-y-5">
-            <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <div>
-                  <h3 className="text-sm font-black text-slate-900">محددات التسعير والتكاليف الواقعية للتجارة بالمغرب (COD)</h3>
-                  <p className="text-xs text-slate-500">عدل الأسعار ونسب التأكيد والتوصيل وشوف المحفظة الصافية</p>
-                </div>
-                <Sliders className="w-4 h-4 text-emerald-600" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Choice 1: Market Fit Scanner */}
+        <button
+          type="button"
+          onClick={() => setActiveSuiteTab('simulator')}
+          className={`p-4 rounded-2xl border text-right transition-all cursor-pointer relative flex flex-col justify-between gap-2.5 ${
+            activeSuiteTab === 'simulator'
+              ? 'bg-gradient-to-b from-teal-50 to-white border-teal-500 shadow-md ring-2 ring-teal-500/20'
+              : 'bg-white border-slate-200/90 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs'
+          }`}
+        >
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2.5">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${activeSuiteTab === 'simulator' ? 'bg-teal-600 text-white' : 'bg-teal-50 text-teal-700'}`}>
+                <Target className="w-5 h-5" />
               </div>
-
-              {/* Sliders Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* 1. Purchase Price */}
-                <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <div className="flex justify-between text-xs font-bold">
-                    <span className="text-slate-600">سعر الشراء بالجملة:</span>
-                    <span className="text-blue-700 font-black">{calcPurchasePrice} DH</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="10"
-                    max="500"
-                    step="5"
-                    value={calcPurchasePrice}
-                    onChange={(e) => setCalcPurchasePrice(Number(e.target.value))}
-                    className="w-full accent-blue-600 cursor-pointer"
-                  />
-                </div>
-
-                {/* 2. Selling Price */}
-                <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <div className="flex justify-between text-xs font-bold">
-                    <span className="text-slate-600">سعر البيع المقترح:</span>
-                    <span className="text-emerald-700 font-black">{calcSellingPrice} DH</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="99"
-                    max="999"
-                    step="10"
-                    value={calcSellingPrice}
-                    onChange={(e) => setCalcSellingPrice(Number(e.target.value))}
-                    className="w-full accent-emerald-600 cursor-pointer"
-                  />
-                </div>
-
-                {/* 3. Shipping Fee */}
-                <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <div className="flex justify-between text-xs font-bold">
-                    <span className="text-slate-600">تكلفة التوصيل الناجح:</span>
-                    <span className="text-slate-900 font-black">{calcShippingCost} DH</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="25"
-                    max="60"
-                    step="5"
-                    value={calcShippingCost}
-                    onChange={(e) => setCalcShippingCost(Number(e.target.value))}
-                    className="w-full accent-slate-800 cursor-pointer"
-                  />
-                </div>
-
-                {/* 4. CPA Ads */}
-                <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <div className="flex justify-between text-xs font-bold">
-                    <span className="text-slate-600">تكلفة الإعلان لكل طلبية (CPA):</span>
-                    <span className="text-purple-700 font-black">{calcCpaAds} DH</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="15"
-                    max="100"
-                    step="5"
-                    value={calcCpaAds}
-                    onChange={(e) => setCalcCpaAds(Number(e.target.value))}
-                    className="w-full accent-purple-600 cursor-pointer"
-                  />
-                </div>
-
-                {/* 5. Confirmation Rate */}
-                <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <div className="flex justify-between text-xs font-bold">
-                    <span className="text-slate-600">نسبة تأكيد الطلبيات:</span>
-                    <span className="text-teal-700 font-black">{calcConfirmRate}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="50"
-                    max="100"
-                    step="5"
-                    value={calcConfirmRate}
-                    onChange={(e) => setCalcConfirmRate(Number(e.target.value))}
-                    className="w-full accent-teal-600 cursor-pointer"
-                  />
-                </div>
-
-                {/* 6. Delivery Rate */}
-                <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <div className="flex justify-between text-xs font-bold">
-                    <span className="text-slate-600">نسبة التسليم (Livraison):</span>
-                    <span className="text-indigo-700 font-black">{calcDeliveryRate}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="50"
-                    max="95"
-                    step="5"
-                    value={calcDeliveryRate}
-                    onChange={(e) => setCalcDeliveryRate(Number(e.target.value))}
-                    className="w-full accent-indigo-600 cursor-pointer"
-                  />
-                </div>
-              </div>
-
-              {/* Monthly Volume */}
-              <div className="pt-2">
-                <div className="flex justify-between text-xs font-bold mb-1">
-                  <span className="text-slate-700">حجم الطلبيات المستهدف شهرياً:</span>
-                  <span className="text-emerald-700 font-black text-sm">{calcOrdersVolume} طلبية واردة</span>
-                </div>
-                <input
-                  type="range"
-                  min="50"
-                  max="1500"
-                  step="50"
-                  value={calcOrdersVolume}
-                  onChange={(e) => setCalcOrdersVolume(Number(e.target.value))}
-                  className="w-full accent-emerald-600 cursor-pointer"
-                />
+              <div>
+                <span className="text-[10px] text-teal-600 font-black uppercase tracking-wider block">
+                  Choix 1 · Test Marché
+                </span>
+                <h3 className="text-sm font-black text-slate-900 leading-tight">
+                  1. فحص ملائمة السوق والطلب
+                </h3>
               </div>
             </div>
+            {activeSuiteTab === 'simulator' && (
+              <span className="w-2.5 h-2.5 rounded-full bg-teal-500 ring-4 ring-teal-100" />
+            )}
+          </div>
+          <p className="text-xs text-slate-500 leading-relaxed font-medium">
+            فحص توافق السلعة مع الجهات والمدن، وحساب حجم الاستهلاك ونسبة التحويل المقدرة.
+          </p>
+        </button>
 
-            {/* Practical Advice based on Calculations */}
-            <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-200 text-xs text-emerald-900 space-y-2">
-              <div className="font-black flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-emerald-600" />
-                <span>تحليل الجدوى والربحية للمنتج:</span>
+        {/* Choice 2: Profit & Margins Simulator */}
+        <button
+          type="button"
+          onClick={() => setActiveSuiteTab('pricing_portfolio')}
+          className={`p-4 rounded-2xl border text-right transition-all cursor-pointer relative flex flex-col justify-between gap-2.5 ${
+            activeSuiteTab === 'pricing_portfolio'
+              ? 'bg-gradient-to-b from-emerald-50 to-white border-emerald-500 shadow-md ring-2 ring-emerald-500/20'
+              : 'bg-white border-slate-200/90 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs'
+          }`}
+        >
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2.5">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${activeSuiteTab === 'pricing_portfolio' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700'}`}>
+                <Calculator className="w-5 h-5" />
               </div>
-              <p className="leading-relaxed">
-                مع سعر شراء {calcPurchasePrice} درهم وسعر بيع {calcSellingPrice} درهم، ربحك الصافي عن كل طلبية مستلمة هو <strong className="text-emerald-950 font-black text-sm">{profitMetrics.netProfitPerDelivered} درهم</strong> بعد تغطية تكلفة الإشهار والشحن وتكاليف الروتور.
-              </p>
+              <div>
+                <span className="text-[10px] text-emerald-600 font-black uppercase tracking-wider block">
+                  Choix 2 · Marge & Profit
+                </span>
+                <h3 className="text-sm font-black text-slate-900 leading-tight">
+                  2. محاكي الأرباح والتسعير
+                </h3>
+              </div>
+            </div>
+            {activeSuiteTab === 'pricing_portfolio' && (
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100" />
+            )}
+          </div>
+          <p className="text-xs text-slate-500 leading-relaxed font-medium">
+            حساب صافي الأرباح في الجيب، مصاريف الإعلانات والشحن والروتور ونقطة التعادل.
+          </p>
+        </button>
+
+        {/* Choice 3: Accounting & Invoices */}
+        <button
+          type="button"
+          onClick={() => setActiveSuiteTab('accounting')}
+          className={`p-4 rounded-2xl border text-right transition-all cursor-pointer relative flex flex-col justify-between gap-2.5 ${
+            activeSuiteTab === 'accounting'
+              ? 'bg-gradient-to-b from-blue-50 to-white border-blue-500 shadow-md ring-2 ring-blue-500/20'
+              : 'bg-white border-slate-200/90 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs'
+          }`}
+        >
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2.5">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${activeSuiteTab === 'accounting' ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700'}`}>
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[10px] text-blue-600 font-black uppercase tracking-wider block">
+                  Choix 3 · Factures & Bilan
+                </span>
+                <h3 className="text-sm font-black text-slate-900 leading-tight">
+                  3. المحاسبة والفواتير
+                </h3>
+              </div>
+            </div>
+            {activeSuiteTab === 'accounting' && (
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-blue-100" />
+            )}
+          </div>
+          <p className="text-xs text-slate-500 leading-relaxed font-medium">
+            تتبع المداخيل، المصاريف اليومية والشهرية، وإصدار وطباعة فواتير الزبناء الرسمية.
+          </p>
+        </button>
+      </div>
+
+      {/* ========================================================
+          SUITE 1: PRODUCT MARKET FIT & CASCADING MARKET SCANNER
+         ======================================================== */}
+      {activeSuiteTab === 'simulator' && (
+        <div className="space-y-5 animate-in fade-in duration-150">
+          {/* Quick Product Pick from Store Bar */}
+          <div className="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-teal-600" />
+              <span className="font-bold text-slate-800">
+                اختر منتجاً من متجرك أو ارفع صورة السلعة الخاصة بك من الحاسوب/الهاتف:
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
+              {ads.slice(0, 4).map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => handlePickStoreProduct(a)}
+                  className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-teal-50 text-[11px] font-bold text-slate-700 hover:text-teal-900 transition-colors shrink-0 cursor-pointer border border-slate-200"
+                >
+                  {a.title.split(' ')[0]} {a.title.split(' ')[1] || ''}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Results & Wallet Portfolio Card (5 cols) */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="sticky top-20">
-              <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 rounded-3xl p-6 text-white shadow-xl space-y-5 border border-slate-700">
-                <div className="flex items-center justify-between pb-3 border-b border-white/10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            {/* Left: Product Inputs & Details with Real Image Upload (5 cols) */}
+            <div className="lg:col-span-5 space-y-4">
+              <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                   <div className="flex items-center gap-2">
-                    <Wallet className="w-5 h-5 text-emerald-400" />
-                    <span className="text-sm font-black">المحفظة الصافية (Portefeuille Net)</span>
+                    <Package className="w-4 h-4 text-teal-600" />
+                    <h3 className="text-xs sm:text-sm font-black text-slate-900">
+                      1. مواصفات السلعة وصورتها للتحليل
+                    </h3>
                   </div>
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full font-black">
-                    هامش {profitMetrics.profitMarginPercent}%
+                  <span className="text-[10px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full font-bold">
+                    معايير الفحص
                   </span>
                 </div>
 
-                {/* Big Profit Number */}
-                <div className="text-center py-2 space-y-1">
-                  <span className="text-xs text-slate-300 font-bold block">الأرباح الصافية الشهرية في جيبك:</span>
-                  <div className="text-4xl sm:text-5xl font-black text-emerald-400 tracking-tight">
-                    {profitMetrics.netProfitTotal.toLocaleString()} <span className="text-xl text-white font-bold">DH</span>
+                {/* Real Photo Upload from PC/Phone */}
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    ref={simFileInputRef}
+                    onChange={handleSimImageUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-900 border border-slate-200 shadow-xs flex items-center justify-center group">
+                    <img
+                      src={simProductImage}
+                      alt={simProductName}
+                      className="w-full h-full object-contain"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => simFileInputRef.current?.click()}
+                      className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-black text-xs cursor-pointer backdrop-blur-[1px]"
+                    >
+                      <UploadCloud className="w-4 h-4" />
+                      <span>أبلود صورة جديدة من جهازك</span>
+                    </button>
                   </div>
-                  <span className="text-[11px] text-slate-400 block">
-                    (ما يعادل {Math.round(profitMetrics.netProfitTotal / 10)} دولار أمريكي شهرياً)
+                  <button
+                    type="button"
+                    onClick={() => simFileInputRef.current?.click()}
+                    className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer border border-slate-200"
+                  >
+                    <FolderOpen className="w-4 h-4 text-teal-600" />
+                    <span>+ أبلود صورة السلعة من حاسوبك أو هاتفك (PC / Téléphone)</span>
+                  </button>
+                </div>
+
+                <div className="space-y-3 text-xs pt-1">
+                  {/* Product Title */}
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">اسم المنتج أو السلعة *</label>
+                    <input
+                      type="text"
+                      value={simProductName}
+                      onChange={(e) => setSimProductName(e.target.value)}
+                      placeholder="مثال: سيروم الزيت المعالج لتساقط الشعر، كريم تبييض..."
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-teal-500"
+                    />
+                  </div>
+
+                  {/* Niche / Category with Presets */}
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">المجال / الصنف (Niche) *</label>
+                    <select
+                      value={simNiche}
+                      onChange={(e) => setSimNiche(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-teal-500 cursor-pointer"
+                    >
+                      <option value="كوسميتيك ومواد التجميل والعناية (Cosmétiques)">كوسميتيك ومواد التجميل والعناية (Cosmétiques)</option>
+                      <option value="مكملات غذائية وصحة (Compléments Alimentaires)">مكملات غذائية وصحة (Compléments Alimentaires)</option>
+                      <option value="إلكترونيات وأجهزة ذكية (Électronique & Gadgets)">إلكترونيات وأجهزة ذكية (Électronique & Gadgets)</option>
+                      <option value="أزياء وملابس وأحذية (Mode & Vêtements)">أزياء وملابس وأحذية (Mode & Vêtements)</option>
+                      <option value="لوازم المنزل والمطبخ (Maison & Cuisine)">لوازم المنزل والمطبخ (Maison & Cuisine)</option>
+                      <option value="إكسسوارات وساعات فاخرة (Accessoires)">إكسسوارات وساعات فاخرة (Accessoires)</option>
+                    </select>
+                  </div>
+
+                  {/* Target Gender & Age */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">الفئة المستهدفة:</label>
+                      <select
+                        value={simTargetGender}
+                        onChange={(e) => setSimTargetGender(e.target.value as any)}
+                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 cursor-pointer"
+                      >
+                        <option value="نساء">نساء (Femmes)</option>
+                        <option value="رجال">رجال (Hommes)</option>
+                        <option value="الجميع">الجميع (Tous)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">السن المستهدف:</label>
+                      <select
+                        value={simTargetAge}
+                        onChange={(e) => setSimTargetAge(e.target.value)}
+                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 cursor-pointer"
+                      >
+                        <option value="18-25 سنة">18 - 25 سنة (شباب)</option>
+                        <option value="25-35 سنة">25 - 35 سنة (نشطون)</option>
+                        <option value="35-50 سنة">35 - 50 سنة (قوة شرائية)</option>
+                        <option value="+50 سنة">+50 سنة</option>
+                        <option value="كل الأعمار">كل الأعمار</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Problem solved */}
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">المشكل الذي يحله المنتج (Problème résolu):</label>
+                    <input
+                      type="text"
+                      value={simProblemSolved}
+                      onChange={(e) => setSimProblemSolved(e.target.value)}
+                      placeholder="مثال: تساقط الشعر والفراغات، آلام المفاصل، الوزن والكرش..."
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:outline-none focus:border-teal-500"
+                    />
+                  </div>
+
+                  {/* Prices */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">سعر الشراء بالجملة ({currentCountry.currency})</label>
+                      <input
+                        type="number"
+                        value={simPurchasePrice}
+                        onChange={(e) => setSimPurchasePrice(Number(e.target.value))}
+                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">سعر البيع المقترح ({currentCountry.currency})</label>
+                      <input
+                        type="number"
+                        value={simSellingPrice}
+                        onChange={(e) => setSimSellingPrice(Number(e.target.value))}
+                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-emerald-700"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Weight Selector */}
+                  <div className="pt-1">
+                    <span className="font-bold text-slate-700 block mb-1">وزن السلعة المقدر:</span>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      {[
+                        { id: 'light', label: 'خفيف (<500g)' },
+                        { id: 'medium', label: 'متوسط (500g-2kg)' },
+                        { id: 'heavy', label: 'ثقيل (+2kg)' },
+                      ].map((w) => (
+                        <button
+                          key={w.id}
+                          type="button"
+                          onClick={() => setSimWeight(w.id as any)}
+                          className={`p-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                            simWeight === w.id
+                              ? 'bg-teal-600 text-white shadow-xs font-black'
+                              : 'bg-slate-50 border-slate-200 text-slate-700'
+                          }`}
+                        >
+                          {w.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Characteristic Checkboxes */}
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <label className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={simHasWowFactor}
+                        onChange={(e) => setSimHasWowFactor(e.target.checked)}
+                        className="w-4 h-4 accent-teal-600"
+                      />
+                      <span className="text-[11px] font-bold text-slate-800">ميزة إبهار (Wow Factor)</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={simIsFragile}
+                        onChange={(e) => setSimIsFragile(e.target.checked)}
+                        className="w-4 h-4 accent-rose-600"
+                      />
+                      <span className="text-[11px] font-bold text-slate-800">قابلة للكسر (زجاج/سائل)</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Cascading Dropdowns & Market Analytics (7 cols) */}
+            <div className="lg:col-span-7 space-y-4">
+              {/* CASCADING MARKET SELECTION BOXES (Country -> Region -> Target City) */}
+              <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs space-y-3.5">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <Compass className="w-4 h-4 text-indigo-600" />
+                    <h3 className="text-xs sm:text-sm font-black text-slate-900">
+                      2. اختيار السوق والجهة والمدينة المستهدفة (Market Selector)
+                    </h3>
+                  </div>
+                  <span className="text-xs font-black text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-100">
+                    {currentCountry.flag} {currentCountry.name}
                   </span>
                 </div>
 
-                {/* Breakdown Tiles */}
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="p-3 bg-white/5 rounded-xl border border-white/10">
-                    <span className="text-[11px] text-slate-400 block">المداخيل الإجمالية (CA):</span>
-                    <span className="text-sm font-black text-white">{profitMetrics.totalRevenue.toLocaleString()} DH</span>
+                {/* 3 Structured Cascading Dropdown Boxes */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  {/* Dropdown 1: Country */}
+                  <div>
+                    <label className="font-black text-slate-700 block mb-1 flex items-center gap-1">
+                      <Globe className="w-3.5 h-3.5 text-blue-600" />
+                      <span>1. الدولة المستهدفة:</span>
+                    </label>
+                    <select
+                      value={selectedCountryKey}
+                      onChange={(e) => handleCountryChange(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-indigo-600 cursor-pointer"
+                    >
+                      {Object.keys(GLOBAL_MARKETS_HIERARCHY).map((cKey) => {
+                        const c = GLOBAL_MARKETS_HIERARCHY[cKey];
+                        return (
+                          <option key={c.id} value={c.id}>
+                            {c.flag} {c.name}
+                          </option>
+                        );
+                      })}
+                    </select>
                   </div>
-                  <div className="p-3 bg-white/5 rounded-xl border border-white/10">
-                    <span className="text-[11px] text-slate-400 block">المصاريف الإجمالية:</span>
-                    <span className="text-sm font-black text-rose-300">{profitMetrics.totalExpenses.toLocaleString()} DH</span>
+
+                  {/* Dropdown 2: Region */}
+                  <div>
+                    <label className="font-black text-slate-700 block mb-1 flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>2. الجهة / الإقليم:</span>
+                    </label>
+                    <select
+                      value={safeRegionKey}
+                      onChange={(e) => handleRegionChange(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-indigo-600 cursor-pointer"
+                    >
+                      {Object.keys(currentCountry.regions || {}).map((rKey) => {
+                        const r = currentCountry.regions[rKey];
+                        return (
+                          <option key={r.id} value={r.id}>
+                            {r.name}
+                          </option>
+                        );
+                      })}
+                    </select>
                   </div>
-                  <div className="p-3 bg-white/5 rounded-xl border border-white/10">
-                    <span className="text-[11px] text-slate-400 block">طلبيات مسلّمة ومخلصة:</span>
-                    <span className="text-sm font-black text-emerald-300">{profitMetrics.deliveredOrders} طلبية</span>
+
+                  {/* Dropdown 3: City */}
+                  <div>
+                    <label className="font-black text-slate-700 block mb-1 flex items-center gap-1">
+                      <Building className="w-3.5 h-3.5 text-purple-600" />
+                      <span>3. المدينة المستهدفة:</span>
+                    </label>
+                    <select
+                      value={safeCityKey}
+                      onChange={(e) => setSelectedCityKey(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-indigo-600 cursor-pointer"
+                    >
+                      {Object.keys(currentRegion.cities || {}).map((cKey) => {
+                        const city = currentRegion.cities[cKey];
+                        return (
+                          <option key={cKey} value={cKey}>
+                            {city.name}
+                          </option>
+                        );
+                      })}
+                    </select>
                   </div>
-                  <div className="p-3 bg-white/5 rounded-xl border border-white/10">
-                    <span className="text-[11px] text-slate-400 block">الربح الصافي للقطعة:</span>
-                    <span className="text-sm font-black text-amber-300">{profitMetrics.netProfitPerDelivered} DH</span>
+                </div>
+              </div>
+
+              {/* DETAILED RESULTS & CONSUMPTION / CONVERSION ESTIMATE */}
+              <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-5 shadow-lg space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                  <div>
+                    <span className="text-[10px] text-amber-400 font-black uppercase tracking-wider block">
+                      إحصائيات وشهية الاستهلاك لـ "{currentCity.name}"
+                    </span>
+                    <h3 className="text-sm sm:text-base font-black text-white">
+                      مؤشرات الطلب والتحويل (Consommation & Conversion)
+                    </h3>
+                  </div>
+                  <div className="text-center p-2 rounded-xl bg-white/10 border border-white/15">
+                    <span className="text-[10px] font-bold text-slate-300 block">نسبة التسليم (COD)</span>
+                    <span className="text-lg font-black text-emerald-400">{currentCity.deliveryRate}%</span>
                   </div>
                 </div>
 
-                {/* Cost Distribution Progress */}
-                <div className="space-y-1.5 pt-2">
-                  <span className="text-[11px] text-slate-400 block font-bold">توزيع المصاريف (سلعة / إعلانات / شحن):</span>
-                  <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden flex">
-                    <div
-                      style={{ width: `${(profitMetrics.productCost / profitMetrics.totalExpenses) * 100}%` }}
-                      className="bg-blue-500 h-full"
-                      title="السلع"
-                    />
-                    <div
-                      style={{ width: `${(profitMetrics.adCost / profitMetrics.totalExpenses) * 100}%` }}
-                      className="bg-purple-500 h-full"
-                      title="الإعلانات"
-                    />
-                    <div
-                      style={{ width: `${(profitMetrics.shippingTotalCost / profitMetrics.totalExpenses) * 100}%` }}
-                      className="bg-amber-500 h-full"
-                      title="التوصيل والروتور"
-                    />
+                {/* The 4 Core Key Metrics requested by the User */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  {/* Metric 1: Consommation / Demand volume */}
+                  <div className="bg-white/5 p-3.5 rounded-xl border border-white/10 space-y-1">
+                    <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1.5">
+                      <ShoppingBag className="w-3.5 h-3.5" />
+                      <span>حجم الاستهلاك والطلب الشهري (Consommation):</span>
+                    </span>
+                    <span className="text-sm sm:text-base font-black text-white block">
+                      {currentCity.monthlyConsumption}
+                    </span>
+                    <span className="text-[10px] text-slate-400 block">
+                      إجمالي الطلبيات المتداولة في هذه المنطقة شهرياً
+                    </span>
                   </div>
-                  <div className="flex justify-between text-[10px] text-slate-400 font-bold pt-1">
-                    <span className="text-blue-400">■ السلع</span>
-                    <span className="text-purple-400">■ الإشهار</span>
-                    <span className="text-amber-400">■ التوصيل والروتور</span>
+
+                  {/* Metric 2: Pourcentage de conversion */}
+                  <div className="bg-white/5 p-3.5 rounded-xl border border-white/10 space-y-1">
+                    <span className="text-[11px] font-bold text-emerald-300 flex items-center gap-1.5">
+                      <Percent className="w-3.5 h-3.5" />
+                      <span>نسبة التحويل والمبيعات (Pourcentage):</span>
+                    </span>
+                    <span className="text-sm sm:text-base font-black text-emerald-400 block">
+                      {currentCity.expectedConversionRate}
+                    </span>
+                    <span className="text-[10px] text-slate-400 block">
+                      معدل تحويل الزوار إلى زبائن فعليين
+                    </span>
                   </div>
+
+                  {/* Metric 3: CPA Ads */}
+                  <div className="bg-white/5 p-3.5 rounded-xl border border-white/10 space-y-1">
+                    <span className="text-[11px] font-bold text-purple-300 flex items-center gap-1.5">
+                      <Target className="w-3.5 h-3.5" />
+                      <span>تكلفة الإعلان لكل طلبية (CPA Ads):</span>
+                    </span>
+                    <span className="text-sm sm:text-base font-black text-purple-400 block">
+                      {currentCity.avgCpa}
+                    </span>
+                    <span className="text-[10px] text-slate-400 block">
+                      القوة الشرائية: {currentCity.purchasingPower}
+                    </span>
+                  </div>
+
+                  {/* Metric 4: Delivery time & Couriers */}
+                  <div className="bg-white/5 p-3.5 rounded-xl border border-white/10 space-y-1">
+                    <span className="text-[11px] font-bold text-blue-300 flex items-center gap-1.5">
+                      <Truck className="w-3.5 h-3.5" />
+                      <span>مدة التوصيل والشركات المعتمدة:</span>
+                    </span>
+                    <span className="text-sm font-black text-white block">
+                      {currentCity.deliveryTime}
+                    </span>
+                    <span className="text-[10px] text-slate-400 block truncate">
+                      {currentCity.topCouriers}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Best Selling Angle & Recommendations */}
+                <div className="p-3 bg-white/5 rounded-xl border border-white/10 text-xs space-y-1.5">
+                  <div className="flex items-center gap-1.5 font-black text-amber-300">
+                    <Sparkles className="w-4 h-4" />
+                    <span>أفضل زاوية تسويقية تحقق أعلى مبيعات في {currentCity.name}:</span>
+                  </div>
+                  <p className="text-white font-bold leading-relaxed">
+                    "{currentCity.bestSellingAngle}"
+                  </p>
+                  <p className="text-[11px] text-slate-300 pt-1 border-t border-white/10">
+                    💡 {currentCity.logisticNotes} · أوقات الذروة: {currentCity.peakHours}
+                  </p>
+                </div>
+              </div>
+
+              {/* Verdict Card (هل البرودوي خدام لداك السوق ولا لا) */}
+              <div
+                className={`rounded-2xl p-4 sm:p-5 border shadow-sm space-y-3 ${
+                  marketFitVerdict.verdictType === 'success'
+                    ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950'
+                    : marketFitVerdict.verdictType === 'warning'
+                    ? 'bg-amber-50/90 border-amber-300 text-amber-950'
+                    : 'bg-rose-50/90 border-rose-300 text-rose-950'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] font-black uppercase tracking-wider block opacity-75">
+                      القرار الحاسم لـ "{simProductName}" في {currentCity.name}
+                    </span>
+                    <h4 className="text-sm sm:text-base font-black leading-tight">
+                      {marketFitVerdict.verdictTitle}
+                    </h4>
+                  </div>
+                  <div className="text-center p-2 rounded-xl bg-white shadow-2xs border border-slate-200 shrink-0">
+                    <span className="text-lg font-black text-slate-900 block leading-none">
+                      {marketFitVerdict.score}%
+                    </span>
+                    <span className="text-[9px] text-slate-400 font-bold block">التوافق</span>
+                  </div>
+                </div>
+
+                <p className="text-xs leading-relaxed font-medium">
+                  {marketFitVerdict.verdictDesc}
+                </p>
+
+                {/* Reasons List */}
+                <div className="space-y-1 pt-2 border-t border-black/10 text-xs">
+                  {marketFitVerdict.reasons.map((r, i) => (
+                    <div key={i} className="flex items-start gap-1.5">
+                      <span className="font-bold">{r.positive ? '✓' : '⚠️'}</span>
+                      <span className={r.positive ? 'font-medium' : 'font-bold'}>{r.text}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -550,149 +1392,236 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
       )}
 
       {/* ========================================================
-          SUITE 2: PRODUCT MARKET FIT SIMULATOR
+          SUITE 2: PRICING & PROFIT CALCULATOR (WIDE & HORIZONTAL AT TOP!)
          ======================================================== */}
-      {activeSuiteTab === 'simulator' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Form Criteria (7 cols) */}
-          <div className="lg:col-span-7 space-y-5">
-            {/* 1. Target Market */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs space-y-3">
-              <h3 className="text-sm font-black text-slate-900">1. السوق المستهدف (Target Market Region)</h3>
-              <p className="text-xs text-slate-500">طبيعة وقوة الشراء تختلف باختلاف جهة البيع بالمغرب</p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {[
-                  { id: 'casablanca_rabat', title: 'كازا والرباط والمدن الكبرى', desc: 'توصيل في 24 ساعة، قوة شرائية عالية، ومنافسة متوسطة' },
-                  { id: 'regions_small', title: 'الأقاليم والمدن المتوسطة والصغرى', desc: 'تعطش للمنتجات النادرة، نسبة استلام عالية، وتوصيل 48 ساعة' },
-                  { id: 'national', title: 'عموم المغرب (السوق الوطني)', desc: 'أوسع وصول وحملات إعلانية بتكلفة CPA منخفضة' },
-                  { id: 'gulf_export', title: 'التصدير لدول الخليج (COD Export)', desc: 'هوامش ربح عالية جداً (بالريال والدرهم الإماراتي)' },
-                ].map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => setTargetMarket(m.id as any)}
-                    className={`p-3 rounded-xl border text-right transition-all cursor-pointer ${
-                      targetMarket === m.id
-                        ? 'bg-teal-50 border-teal-600 ring-2 ring-teal-600/20'
-                        : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    <span className="text-xs font-black text-slate-900 block">{m.title}</span>
-                    <span className="text-[11px] text-slate-500 leading-tight block mt-0.5">{m.desc}</span>
-                  </button>
-                ))}
+      {activeSuiteTab === 'pricing_portfolio' && (
+        <div className="space-y-5 animate-in fade-in duration-150">
+          {/* HORIZONTAL SUMMARY BAR AT THE TOP (عريضة وأفقية الفوق كطلب المستخدم) */}
+          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-5 sm:p-6 shadow-lg space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+              <div>
+                <span className="text-xs font-bold text-amber-400 block">
+                  الملخص المالي الشامل لحملة الدفع عند الاستلام (COD)
+                </span>
+                <h3 className="text-base sm:text-lg font-black text-white">
+                  الأرباح الصافية الحقيقية بعد خصم جميع التكاليف
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full font-black border border-emerald-500/30">
+                  هامش صافي {profitMetrics.profitMarginPercent}%
+                </span>
+                <span className="text-xs bg-white/10 text-slate-300 px-3 py-1 rounded-full font-bold">
+                  {profitMetrics.totalLeads} طلبية واردة
+                </span>
               </div>
             </div>
 
-            {/* 2. Product Characteristics */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs space-y-4">
-              <h3 className="text-sm font-black text-slate-900">2. مواصفات السلعة اللوجستية (Product Specifications)</h3>
-
-              <div className="space-y-3 text-xs">
-                <div>
-                  <span className="font-bold text-slate-700 block mb-1.5">وزن وحجم السلعة:</span>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { id: 'light', label: 'خفيف (< 500g)', sub: 'مثالي للشحن السريع' },
-                      { id: 'medium', label: 'متوسط (500g - 2kg)', sub: 'تكلفة شحن عادية' },
-                      { id: 'heavy', label: 'ثقيل (> 2kg)', sub: 'زيادة فـ مصاريف الشحن' },
-                    ].map((w) => (
-                      <button
-                        key={w.id}
-                        onClick={() => setProductWeight(w.id as any)}
-                        className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
-                          productWeight === w.id
-                            ? 'bg-teal-600 text-white font-black'
-                            : 'bg-slate-50 border-slate-200 text-slate-700'
-                        }`}
-                      >
-                        <span className="block font-bold">{w.label}</span>
-                        <span className="text-[10px] block opacity-80">{w.sub}</span>
-                      </button>
-                    ))}
-                  </div>
+            {/* WIDE HORIZONTAL KPI CARDS ROW */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {/* Card 1: Total Net Profit */}
+              <div className="bg-white/5 p-3.5 rounded-xl border border-white/10 space-y-1">
+                <span className="text-[11px] font-bold text-slate-400 block">صافي الأرباح في جيبك (Bénéfice Net):</span>
+                <div className="text-2xl sm:text-3xl font-black text-emerald-400">
+                  {profitMetrics.netProfitTotal.toLocaleString()} <span className="text-sm">DH</span>
                 </div>
+                <span className="text-[10px] text-emerald-300 block">ربح صافي بعد كل المصاريف</span>
+              </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  <label className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={hasWowFactor}
-                      onChange={(e) => setHasWowFactor(e.target.checked)}
-                      className="w-4 h-4 accent-teal-600"
-                    />
-                    <div>
-                      <span className="font-bold text-slate-900 block">فيه ميزة مبهرة (Wow Factor)؟</span>
-                      <span className="text-[10px] text-slate-500">حل لمشكل واضح أو فكرة غير مألوفة</span>
-                    </div>
-                  </label>
-
-                  <label className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isFragile}
-                      onChange={(e) => setIsFragile(e.target.checked)}
-                      className="w-4 h-4 accent-rose-600"
-                    />
-                    <div>
-                      <span className="font-bold text-slate-900 block">سلعة قابلة للكسر (زجاج / سائل)؟</span>
-                      <span className="text-[10px] text-slate-500">قد ترفع نسبة تلف الشحنات</span>
-                    </div>
-                  </label>
+              {/* Card 2: Net Profit Per Delivered */}
+              <div className="bg-white/5 p-3.5 rounded-xl border border-white/10 space-y-1">
+                <span className="text-[11px] font-bold text-slate-400 block">الربح الصافي للطلبية المسلمة:</span>
+                <div className="text-xl sm:text-2xl font-black text-white">
+                  {profitMetrics.netProfitPerDelivered} <span className="text-xs font-bold text-slate-400">DH</span>
                 </div>
+                <span className="text-[10px] text-slate-300 block">لكل كولية تم استخلاص ثمنها</span>
+              </div>
+
+              {/* Card 3: Breakeven CPA */}
+              <div className="bg-white/5 p-3.5 rounded-xl border border-white/10 space-y-1">
+                <span className="text-[11px] font-bold text-slate-400 block">نقطة التعادل (Breakeven CPA):</span>
+                <div className="text-xl sm:text-2xl font-black text-amber-400">
+                  {profitMetrics.breakevenCpa} <span className="text-xs font-bold text-slate-400">DH</span>
+                </div>
+                <span className="text-[10px] text-amber-300/80 block">أقصى حد لتكلفة الإعلان لتفادي الخسارة</span>
+              </div>
+
+              {/* Card 4: Orders Funnel */}
+              <div className="bg-white/5 p-3.5 rounded-xl border border-white/10 space-y-1">
+                <span className="text-[11px] font-bold text-slate-400 block">الطلبيات المسلمة (Livrées):</span>
+                <div className="text-xl sm:text-2xl font-black text-teal-400">
+                  {profitMetrics.deliveredOrders} <span className="text-xs font-bold text-slate-400">طلبية</span>
+                </div>
+                <span className="text-[10px] text-slate-300 block">
+                  {profitMetrics.confirmedOrders} مؤكدة · {profitMetrics.returnedOrders} روتور
+                </span>
+              </div>
+            </div>
+
+            {/* Horizontal Financial Breakdown Strip */}
+            <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-1.5 text-slate-300">
+                <span className="font-bold">المداخيل الإجمالية:</span>
+                <span className="text-emerald-400 font-black">{profitMetrics.totalRevenue.toLocaleString()} DH</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-slate-300">
+                <span className="font-bold">ميزانية الإعلانات (CPA):</span>
+                <span className="text-purple-400 font-black">{profitMetrics.adCost.toLocaleString()} DH</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-slate-300">
+                <span className="font-bold">تكلفة السلع بالجملة:</span>
+                <span className="text-blue-400 font-black">{profitMetrics.productCost.toLocaleString()} DH</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-slate-300">
+                <span className="font-bold">تكاليف التوصيل والروتور:</span>
+                <span className="text-rose-400 font-black">{profitMetrics.shippingTotalCost.toLocaleString()} DH</span>
               </div>
             </div>
           </div>
 
-          {/* Results & Winning Score Card (5 cols) */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="sticky top-20">
-              <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xl space-y-5">
-                <div className="text-center pb-3 border-b border-slate-100">
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-wider block">
-                    مؤشر النجاح وملاءمة السوق (Market Fit Score)
-                  </span>
-                  <div className="text-5xl font-black text-teal-600 tracking-tight my-2">
-                    {marketFitResult.score}<span className="text-2xl text-slate-400 font-bold">/100</span>
-                  </div>
-                  <span className={`inline-block text-xs font-black px-3 py-1 rounded-full border ${marketFitResult.statusColor}`}>
-                    {marketFitResult.status}
-                  </span>
-                </div>
-
-                {/* Score Breakdown Bar */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs font-bold text-slate-700">
-                    <span>نسبة القبول والطلب:</span>
-                    <span>{marketFitResult.score}%</span>
-                  </div>
-                  <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      style={{ width: `${marketFitResult.score}%` }}
-                      className="h-full bg-gradient-to-r from-teal-500 to-emerald-600 transition-all duration-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Practical Recommendations */}
-                <div className="space-y-2 text-xs">
-                  <span className="font-black text-slate-900 block">خطة إطلاق هذا المنتج:</span>
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-700 space-y-1.5 leading-relaxed">
-                    <div className="flex items-start gap-1.5">
-                      <span className="text-teal-600 font-black">1.</span>
-                      <span>ابدأ بتجربة إعلانية ميزانيتها 100 إلى 150 درهم فاليوم على فيسبوك وتيك توك ريلز.</span>
-                    </div>
-                    <div className="flex items-start gap-1.5">
-                      <span className="text-teal-600 font-black">2.</span>
-                      <span>وفر عرضاً مزدوجاً (2 حبات بتخفيض) باش ترفع سلة المشتريات (AOV) وتخفض نسبة تكلفة الإعلان للقطعة.</span>
-                    </div>
-                    <div className="flex items-start gap-1.5">
-                      <span className="text-teal-600 font-black">3.</span>
-                      <span>تأكيد الطلبيات بسرعة عبر واتساب خلال أقل من 15 دقيقة يضمن لك نسبة تسليم تفوق 80%!</span>
-                    </div>
-                  </div>
-                </div>
+          {/* Sliders Grid across the width */}
+          <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-sm sm:text-base font-black text-slate-900">
+                  محددات وإعدادات حساب الأرباح الواقعية لتجارة الدفع عند الاستلام
+                </h3>
+                <p className="text-xs text-slate-500">
+                  حرك المؤشرات لملاحظة تأثير نسبة التأكيد وتكلفة الإعلان على صافي أرباحك في الأعلى
+                </p>
               </div>
+              <Sliders className="w-5 h-5 text-emerald-600" />
+            </div>
+
+            {/* Sliders in a 3-column wide responsive grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {/* 1. Purchase Price */}
+              <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-slate-700">سعر شراء السلعة (COGS):</span>
+                  <span className="text-blue-700 font-black text-sm">{calcPurchasePrice} DH</span>
+                </div>
+                <input
+                  type="range"
+                  min="10"
+                  max="500"
+                  step="5"
+                  value={calcPurchasePrice}
+                  onChange={(e) => setCalcPurchasePrice(Number(e.target.value))}
+                  className="w-full accent-blue-600 cursor-pointer"
+                />
+                <span className="text-[10px] text-slate-400 block">تكلفة شراء القطعة الواحدة من المورد</span>
+              </div>
+
+              {/* 2. Selling Price */}
+              <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-slate-700">سعر البيع للزبون (Prix de Vente):</span>
+                  <span className="text-emerald-700 font-black text-sm">{calcSellingPrice} DH</span>
+                </div>
+                <input
+                  type="range"
+                  min="99"
+                  max="999"
+                  step="10"
+                  value={calcSellingPrice}
+                  onChange={(e) => setCalcSellingPrice(Number(e.target.value))}
+                  className="w-full accent-emerald-600 cursor-pointer"
+                />
+                <span className="text-[10px] text-slate-400 block">السعر المعروض في صفحة الهبوط والإعلانات</span>
+              </div>
+
+              {/* 3. Shipping Fee Delivered */}
+              <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-slate-700">تكلفة التوصيل الناجح:</span>
+                  <span className="text-slate-900 font-black text-sm">{calcShippingCost} DH</span>
+                </div>
+                <input
+                  type="range"
+                  min="25"
+                  max="60"
+                  step="5"
+                  value={calcShippingCost}
+                  onChange={(e) => setCalcShippingCost(Number(e.target.value))}
+                  className="w-full accent-slate-800 cursor-pointer"
+                />
+                <span className="text-[10px] text-slate-400 block">متوسط عمولة شركة الشحن عند تسليم الكولية</span>
+              </div>
+
+              {/* 4. CPA Ads */}
+              <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-slate-700">تكلفة الإشهار لكل طلبية (CPA):</span>
+                  <span className="text-purple-700 font-black text-sm">{calcCpaAds} DH</span>
+                </div>
+                <input
+                  type="range"
+                  min="15"
+                  max="100"
+                  step="5"
+                  value={calcCpaAds}
+                  onChange={(e) => setCalcCpaAds(Number(e.target.value))}
+                  className="w-full accent-purple-600 cursor-pointer"
+                />
+                <span className="text-[10px] text-slate-400 block">المبلغ المدفوع لفيسبوك / تيك توك لجلب طلبية واحدة</span>
+              </div>
+
+              {/* 5. Confirmation Rate */}
+              <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-slate-700">نسبة تأكيد المكالمات:</span>
+                  <span className="text-teal-700 font-black text-sm">{calcConfirmRate}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="50"
+                  max="100"
+                  step="5"
+                  value={calcConfirmRate}
+                  onChange={(e) => setCalcConfirmRate(Number(e.target.value))}
+                  className="w-full accent-teal-600 cursor-pointer"
+                />
+                <span className="text-[10px] text-slate-400 block">نسبة الزبائن الذين يؤكدون العنوان هاتفياً</span>
+              </div>
+
+              {/* 6. Delivery Rate */}
+              <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-slate-700">نسبة التسليم (Taux de Livraison):</span>
+                  <span className="text-indigo-700 font-black text-sm">{calcDeliveryRate}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="50"
+                  max="95"
+                  step="5"
+                  value={calcDeliveryRate}
+                  onChange={(e) => setCalcDeliveryRate(Number(e.target.value))}
+                  className="w-full accent-indigo-600 cursor-pointer"
+                />
+                <span className="text-[10px] text-slate-400 block">نسبة من يدفع ويستلم السلعة عند وصول الموزع</span>
+              </div>
+            </div>
+
+            {/* Monthly Volume Slider */}
+            <div className="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200/80 space-y-2">
+              <div className="flex justify-between text-xs font-bold">
+                <span className="text-emerald-950 font-black">حجم الطلبيات الواردة شهرياً (Volume Leads):</span>
+                <span className="text-emerald-700 font-black text-sm sm:text-base">{calcOrdersVolume} طلبية واردة</span>
+              </div>
+              <input
+                type="range"
+                min="50"
+                max="1500"
+                step="50"
+                value={calcOrdersVolume}
+                onChange={(e) => setCalcOrdersVolume(Number(e.target.value))}
+                className="w-full accent-emerald-600 cursor-pointer"
+              />
+              <span className="text-[10px] text-emerald-800 block">
+                تحديد حجم الحملة لتقدير صافي الأرباح الشهرية بدقة ومراقبة نقطة التعادل
+              </span>
             </div>
           </div>
         </div>
@@ -700,52 +1629,85 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
 
       {/* ========================================================
           SUITE 3: ACCOUNTING & INVOICES (COMPTABILITÉ & FACTURES)
+          (مضبوطة ومقادة بالفرنسية والعربية وبحجم متناسق ومريح)
          ======================================================== */}
       {activeSuiteTab === 'accounting' && (
-        <div className="space-y-6">
-          {/* Accounting KPI Cards (Daily / Monthly / Yearly) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-1">
-              <span className="text-[11px] font-bold text-slate-400 block">إجمالي المداخيل (CA):</span>
+        <div className="space-y-5 animate-in fade-in duration-150">
+          {/* Accounting KPI Cards (Daily / Monthly / Yearly) with Clear French Badges */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            {/* Card 1: Chiffre d'Affaires */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800">إجمالي المداخيل</span>
+                <span className="text-[10px] font-black uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+                  Chiffre d'Affaires
+                </span>
+              </div>
               <div className="text-2xl font-black text-slate-900">
                 {accountingTotals.totalRevenue.toLocaleString()} <span className="text-xs text-slate-500 font-bold">DH</span>
               </div>
-              <span className="text-[10px] text-emerald-600 font-bold block">مجموع المبيعات المسلّمة</span>
+              <span className="text-[11px] text-emerald-600 font-bold block">
+                Ventes encaissées avec succès
+              </span>
             </div>
 
-            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-1">
-              <span className="text-[11px] font-bold text-slate-400 block">إجمالي المصاريف المقدرة:</span>
+            {/* Card 2: Dépenses */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800">المصاريف المقدرة</span>
+                <span className="text-[10px] font-black uppercase text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">
+                  Dépenses & Coûts
+                </span>
+              </div>
               <div className="text-2xl font-black text-rose-600">
                 {accountingTotals.estimatedExpenses.toLocaleString()} <span className="text-xs text-slate-500 font-bold">DH</span>
               </div>
-              <span className="text-[10px] text-slate-500 font-bold block">سلع + شحن + إعلانات</span>
+              <span className="text-[11px] text-slate-500 font-bold block">
+                Produits + Livraison + Ads
+              </span>
             </div>
 
-            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-1">
-              <span className="text-[11px] font-bold text-slate-400 block">الأرباح الصافية المحققة:</span>
+            {/* Card 3: Bénéfice Net */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800">الأرباح الصافية</span>
+                <span className="text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                  Bénéfice Net
+                </span>
+              </div>
               <div className="text-2xl font-black text-emerald-600">
                 {accountingTotals.netProfit.toLocaleString()} <span className="text-xs text-emerald-700 font-bold">DH</span>
               </div>
-              <span className="text-[10px] text-emerald-600 font-bold block">هامش ربح صافي ~52%</span>
+              <span className="text-[11px] text-emerald-600 font-bold block">
+                Marge nette réelle ~52%
+              </span>
             </div>
 
-            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-1">
-              <span className="text-[11px] font-bold text-slate-400 block">الفواتير المستخلصة:</span>
-              <div className="text-2xl font-black text-blue-600">
+            {/* Card 4: Factures Acquittées */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800">الفواتير المستخلصة</span>
+                <span className="text-[10px] font-black uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                  Factures Payées
+                </span>
+              </div>
+              <div className="text-2xl font-black text-indigo-600">
                 {accountingTotals.paidCount} <span className="text-xs text-slate-500 font-bold">فاتورة</span>
               </div>
-              <span className="text-[10px] text-blue-600 font-bold block">جاهزة للطباعة والتحميل</span>
+              <span className="text-[11px] text-indigo-600 font-bold block">
+                Prêtes pour impression & suivi
+              </span>
             </div>
           </div>
 
           {/* Invoices Action Bar */}
-          <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-4">
+          <div className="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-3">
             {/* Period selector */}
             <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-bold">
               {[
-                { id: 'all', label: 'كل الفترات' },
-                { id: 'daily', label: 'اليومي (اليوم)' },
-                { id: 'monthly', label: 'الشهري (أكتوبر 2026)' },
+                { id: 'all', label: 'كل الفترات (Toutes)' },
+                { id: 'daily', label: 'اليومي (Aujourd\'hui)' },
+                { id: 'monthly', label: 'الشهري (Ce mois)' },
                 { id: 'yearly', label: 'السنوي (2026)' },
               ].map((p) => (
                 <button
@@ -763,80 +1725,81 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
             </div>
 
             {/* Search + Add Invoice */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               <div className="relative">
                 <input
                   type="text"
                   value={invoiceSearchQuery}
                   onChange={(e) => setInvoiceSearchQuery(e.target.value)}
-                  placeholder="ابحث برقم الفاتورة أو اسم الزبون..."
+                  placeholder="ابحث بالفاتورة أو الزبون..."
                   className="py-1.5 px-3 pr-8 bg-slate-100 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 text-slate-800 placeholder:text-slate-400"
                 />
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute top-1/2 -translate-y-1/2 right-2.5 pointer-events-none" />
               </div>
 
               <button
-                onClick={() => setIsCreateInvoiceOpen(true)}
+                onClick={() => {
+                  setInvoiceFormError(null);
+                  setIsCreateInvoiceOpen(true);
+                }}
                 className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
               >
-                <Plus className="w-4 h-4" />
-                <span>إصدار فاتورة جديدة</span>
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ فاتورة جديدة (Nouvelle Facture)</span>
               </button>
             </div>
           </div>
 
-          {/* Invoices Table */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+          {/* Invoices Table with Clear French/Arabic Headings */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-right text-xs">
-                <thead className="bg-slate-50 text-slate-500 font-black border-b border-slate-200">
+                <thead className="bg-slate-50 text-slate-600 font-black border-b border-slate-200">
                   <tr>
-                    <th className="py-3 px-4">رقم الفاتورة</th>
-                    <th className="py-3 px-4">الزبون / الهاتف</th>
-                    <th className="py-3 px-4">المدينة</th>
-                    <th className="py-3 px-4">المنتج والكمية</th>
-                    <th className="py-3 px-4">المجموع (TTC)</th>
-                    <th className="py-3 px-4">التاريخ</th>
-                    <th className="py-3 px-4">الحالة</th>
-                    <th className="py-3 px-4 text-center">نسخة الفاتورة</th>
+                    <th className="py-2.5 px-3.5">N° Facture / رقم الفاتورة</th>
+                    <th className="py-2.5 px-3.5">Client & Contact / الزبون والهاتف</th>
+                    <th className="py-2.5 px-3.5">Ville / المدينة</th>
+                    <th className="py-2.5 px-3.5">Article & Qté / المنتج والكمية</th>
+                    <th className="py-2.5 px-3.5">Total TTC / المجموع</th>
+                    <th className="py-2.5 px-3.5">Date / التاريخ</th>
+                    <th className="py-2.5 px-3.5">Statut / الحالة</th>
+                    <th className="py-2.5 px-3.5 text-center">Action / المعاينة</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-800 font-medium">
                   {filteredInvoices.map((inv) => (
                     <tr key={inv.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-4 font-mono font-black text-blue-700">{inv.id}</td>
-                      <td className="py-3 px-4">
+                      <td className="py-2.5 px-3.5 font-mono font-bold text-blue-700">{inv.id}</td>
+                      <td className="py-2.5 px-3.5">
                         <span className="font-bold block text-slate-900">{inv.customerName}</span>
                         <span className="text-[10px] text-slate-400 font-mono" dir="ltr">{inv.customerPhone}</span>
                       </td>
-                      <td className="py-3 px-4">
-                        <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md text-[11px] font-bold">
-                          {inv.customerCity}
+                      <td className="py-2.5 px-3.5">{inv.customerCity}</td>
+                      <td className="py-2.5 px-3.5">
+                        <span className="font-bold">{inv.productTitle}</span>
+                        <span className="text-[10px] text-slate-500 block">Qté: {inv.quantity}</span>
+                      </td>
+                      <td className="py-2.5 px-3.5 font-black text-emerald-700">{inv.totalAmount} DH</td>
+                      <td className="py-2.5 px-3.5 font-mono text-[11px] text-slate-500">{inv.date}</td>
+                      <td className="py-2.5 px-3.5">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            inv.status === 'paid'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : inv.status === 'pending'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-rose-100 text-rose-800'
+                          }`}
+                        >
+                          {inv.status === 'paid' ? 'Payée (مؤداة)' : inv.status === 'pending' ? 'En cours (قيد التوصيل)' : 'Retournée (ملغاة)'}
                         </span>
                       </td>
-                      <td className="py-3 px-4">
-                        <span className="font-bold truncate max-w-[160px] block">{inv.productTitle}</span>
-                        <span className="text-[10px] text-slate-500">الكمية: {inv.quantity}</span>
-                      </td>
-                      <td className="py-3 px-4 font-black text-slate-900">
-                        {inv.totalAmount} {inv.currency}
-                      </td>
-                      <td className="py-3 px-4 font-mono text-slate-500 text-[11px]">
-                        {inv.date}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          <span>مسددة</span>
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-2.5 px-3.5 text-center">
                         <button
                           onClick={() => setSelectedInvoiceForModal(inv)}
-                          className="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 text-blue-700 text-xs font-bold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1 border border-slate-200"
+                          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
                         >
-                          <FileText className="w-3.5 h-3.5" />
-                          <span>عرض / طباعة</span>
+                          معاينة الفاتورة
                         </button>
                       </td>
                     </tr>
@@ -844,251 +1807,194 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
                 </tbody>
               </table>
             </div>
-
-            {filteredInvoices.length === 0 && (
-              <div className="p-8 text-center text-slate-400 space-y-2">
-                <FileText className="w-8 h-8 mx-auto text-slate-300" />
-                <p className="text-xs font-bold">لا توجد فواتير مسجلة في هذه الفترة المختارة.</p>
-              </div>
-            )}
           </div>
         </div>
       )}
 
       {/* ========================================================
-          MODAL: OFFICIAL INVOICE PREVIEW & PRINT
+          INVOICE PREVIEW MODAL (Printable & Exportable)
          ======================================================== */}
       {selectedInvoiceForModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200">
-            {/* Modal Controls Bar */}
-            <div className="p-4 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => window.print()}
-                  className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
-                >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>طباعة الفاتورة الرسمية</span>
-                </button>
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 space-y-5 shadow-2xl animate-in zoom-in-95 text-slate-900">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div>
+                <h3 className="text-base font-black">فاتورة تجارية (Facture de Vente)</h3>
+                <span className="text-xs text-slate-400 font-mono">{selectedInvoiceForModal.id}</span>
               </div>
-
               <button
                 onClick={() => setSelectedInvoiceForModal(null)}
-                className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center hover:bg-slate-300 transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Printable Invoice Document */}
-            <div className="p-6 sm:p-8 space-y-6 text-slate-900 bg-white" id="official-printable-invoice">
-              {/* Invoice Header */}
-              <div className="flex items-start justify-between pb-6 border-b-2 border-slate-900">
-                <div className="space-y-1">
-                  <div className="text-xl font-black tracking-tight text-blue-700">
-                    {selectedInvoiceForModal.sellerName}
-                  </div>
-                  <div className="text-xs text-slate-600">
-                    <div>{selectedInvoiceForModal.sellerCity}، المغرب</div>
-                    <div>الهاتف: {selectedInvoiceForModal.sellerPhone}</div>
-                    {selectedInvoiceForModal.iceNumber && (
-                      <div className="font-mono text-[11px] text-slate-500">
-                        N° ICE: {selectedInvoiceForModal.iceNumber}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="text-left space-y-1">
-                  <div className="text-2xl font-black text-slate-900">FACTURE</div>
-                  <div className="text-xs font-mono font-bold text-blue-600">
-                    {selectedInvoiceForModal.id}
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    التاريخ: {selectedInvoiceForModal.date}
-                  </div>
-                </div>
-              </div>
-
-              {/* Client Info Box */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs grid grid-cols-2 gap-4">
+            <div className="space-y-3.5 text-xs">
+              <div className="flex justify-between bg-slate-50 p-3 rounded-xl border border-slate-200">
                 <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">فاتورة موجهة إلى (Client):</span>
-                  <div className="font-black text-slate-900 text-sm">{selectedInvoiceForModal.customerName}</div>
-                  <div className="text-slate-600">{selectedInvoiceForModal.customerAddress}</div>
-                  <div className="font-bold text-slate-800">{selectedInvoiceForModal.customerCity}</div>
+                  <span className="text-slate-400 block">Vendeur / البائع:</span>
+                  <span className="font-bold text-slate-900 block">{selectedInvoiceForModal.sellerName}</span>
+                  <span className="text-slate-500 font-mono block">ICE: {selectedInvoiceForModal.iceNumber || '003291823000045'}</span>
                 </div>
-
                 <div className="text-left">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">بيانات التسليم والدفع:</span>
-                  <div className="font-mono text-slate-700">{selectedInvoiceForModal.customerPhone}</div>
-                  <div className="font-bold text-emerald-700 mt-1">الدفع عند الاستلام (COD) ✓</div>
-                  <div className="text-[10px] text-slate-500">طريقة الأداء: نقداً بعد المعاينة</div>
+                  <span className="text-slate-400 block">Client / الزبون:</span>
+                  <span className="font-bold text-slate-900 block">{selectedInvoiceForModal.customerName}</span>
+                  <span className="text-slate-500 block">{selectedInvoiceForModal.customerCity}</span>
+                  <span className="font-mono text-slate-500 block" dir="ltr">{selectedInvoiceForModal.customerPhone}</span>
                 </div>
               </div>
 
-              {/* Invoice Items Table */}
               <div className="border border-slate-200 rounded-xl overflow-hidden">
-                <table className="w-full text-right text-xs">
-                  <thead className="bg-slate-100 text-slate-700 font-black border-b border-slate-200">
+                <table className="w-full text-right">
+                  <thead className="bg-slate-100 text-slate-600 font-bold">
                     <tr>
-                      <th className="py-2.5 px-3">المنتج / البيان</th>
-                      <th className="py-2.5 px-3 text-center">الكمية</th>
-                      <th className="py-2.5 px-3">السعر الفردي</th>
-                      <th className="py-2.5 px-3 text-left">المجموع</th>
+                      <th className="p-2.5">Article / المنتج</th>
+                      <th className="p-2.5">Qté / الكمية</th>
+                      <th className="p-2.5">Prix Unitaire / السعر</th>
+                      <th className="p-2.5">Total TTC / المجموع</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium">
+                  <tbody>
                     <tr>
-                      <td className="py-3 px-3">
-                        <span className="font-bold block text-slate-900">{selectedInvoiceForModal.productTitle}</span>
-                        <span className="text-[10px] text-slate-500">رقم الطلبية: {selectedInvoiceForModal.orderId}</span>
-                      </td>
-                      <td className="py-3 px-3 text-center font-bold">{selectedInvoiceForModal.quantity}</td>
-                      <td className="py-3 px-3">{selectedInvoiceForModal.unitPrice} DH</td>
-                      <td className="py-3 px-3 text-left font-black">{selectedInvoiceForModal.totalAmount} DH</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2.5 px-3 text-slate-500">مصاريف التوصيل السريع لـ {selectedInvoiceForModal.customerCity}</td>
-                      <td className="py-2.5 px-3 text-center font-bold">1</td>
-                      <td className="py-2.5 px-3">0.00 DH</td>
-                      <td className="py-2.5 px-3 text-left font-bold text-emerald-600">مجاني (0 DH)</td>
+                      <td className="p-2.5 font-bold">{selectedInvoiceForModal.productTitle}</td>
+                      <td className="p-2.5">{selectedInvoiceForModal.quantity}</td>
+                      <td className="p-2.5">{selectedInvoiceForModal.unitPrice} DH</td>
+                      <td className="p-2.5 font-black text-emerald-700">{selectedInvoiceForModal.totalAmount} DH</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
-              {/* Total & Cachet */}
-              <div className="flex items-end justify-between pt-4">
-                {/* Official Stamp Cachet */}
-                <div className="w-36 h-28 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center justify-center text-center p-2 rotate-[-4deg] text-slate-400">
-                  <span className="text-[9px] font-black uppercase tracking-wider block text-blue-600">SO9FIADAK MAROC</span>
-                  <span className="text-[10px] font-black text-emerald-600 block my-0.5">PAYÉ EN ESPÈCES</span>
-                  <span className="text-[8px] block">CACHET & SIGNATURE</span>
-                </div>
-
-                {/* Totals Calculation */}
-                <div className="w-56 space-y-1.5 text-xs">
-                  <div className="flex justify-between text-slate-600">
-                    <span>المجموع الصافي (HT):</span>
-                    <span>{selectedInvoiceForModal.totalAmount} DH</span>
-                  </div>
-                  <div className="flex justify-between text-slate-600">
-                    <span>الضريبة TVA (0%):</span>
-                    <span>0.00 DH</span>
-                  </div>
-                  <div className="flex justify-between text-base font-black text-slate-900 pt-2 border-t-2 border-slate-900">
-                    <span>المجموع الصافي (TTC):</span>
-                    <span className="text-emerald-700">{selectedInvoiceForModal.totalAmount} DH</span>
-                  </div>
-                </div>
+              <div className="flex justify-between items-center pt-2 border-t">
+                <span className="font-bold text-slate-600">المبلغ الإجمالي المستخلص عند التسليم (Total Payé):</span>
+                <span className="text-xl font-black text-emerald-700">{selectedInvoiceForModal.totalAmount} DH</span>
               </div>
+            </div>
 
-              {/* Footer Terms */}
-              <div className="pt-4 border-t border-slate-100 text-[10px] text-slate-400 text-center">
-                هذه الوثيقة تعد فاتورة بيع وتسليم رسمية صادرة عبر منصة SO9FIADAK بالمملكة المغربية. للشكاوى أو استبدال السلعة، تواصلوا معنا خلال 7 أيام من تاريخ الاستلام.
-              </div>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                onClick={() => {
+                  try {
+                    window.print();
+                  } catch (e) {
+                    console.warn('Printing not available in iframe', e);
+                  }
+                }}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Imprimer (طباعة الفاتورة)</span>
+              </button>
+              <button
+                onClick={() => setSelectedInvoiceForModal(null)}
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl transition-colors cursor-pointer"
+              >
+                Fermer (إغلاق)
+              </button>
             </div>
           </div>
         </div>
       )}
 
       {/* ========================================================
-          MODAL: CREATE NEW INVOICE
+          CREATE NEW INVOICE MODAL
          ======================================================== */}
       {isCreateInvoiceOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-sm font-black text-slate-900">إصدار فاتورة بيع جديدة</h3>
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 text-slate-900">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="text-sm font-black text-slate-900">إصدار فاتورة جديدة للزبون (Créer Facture)</h3>
               <button
                 onClick={() => setIsCreateInvoiceOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-slate-200 cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleAddNewInvoice} className="space-y-3 text-xs">
+            {invoiceFormError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
+                <span>{invoiceFormError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleCreateNewInvoice} className="space-y-3 text-xs">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">اسم الزبون الكامل *</label>
+                <label className="font-bold text-slate-700 block mb-1">اسم الزبون الكامل (Nom Client) *</label>
                 <input
                   type="text"
                   required
                   value={newInvCustomer}
                   onChange={(e) => setNewInvCustomer(e.target.value)}
-                  placeholder="مثال: يونس الفاسي"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
+                  placeholder="مثال: يوسف المنصوري"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">رقم الهاتف *</label>
+                <label className="font-bold text-slate-700 block mb-1">رقم الهاتف (Téléphone) *</label>
                 <input
                   type="tel"
                   required
                   value={newInvPhone}
                   onChange={(e) => setNewInvPhone(e.target.value)}
                   placeholder="0612345678"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 text-left font-mono"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono"
                   dir="ltr"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">المدينة *</label>
+                <label className="font-bold text-slate-700 block mb-1">المدينة (Ville) *</label>
                 <select
                   value={newInvCity}
                   onChange={(e) => setNewInvCity(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer"
                 >
-                  {CITIES.filter((c) => c !== 'كل المدن').map((c) => (
+                  {CITIES.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
               </div>
 
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">المنتج *</label>
-                <input
-                  type="text"
-                  required
-                  value={newInvProduct}
-                  onChange={(e) => setNewInvProduct(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">الكمية</label>
+                  <label className="font-bold text-slate-700 block mb-1">الكمية (Quantité)</label>
                   <input
                     type="number"
-                    min="1"
+                    min={1}
                     value={newInvQty}
                     onChange={(e) => setNewInvQty(Number(e.target.value))}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">السعر (DH)</label>
+                  <label className="font-bold text-slate-700 block mb-1">السعر (Prix DH)</label>
                   <input
                     type="number"
-                    min="10"
+                    min={10}
                     value={newInvPrice}
                     onChange={(e) => setNewInvPrice(Number(e.target.value))}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold"
                   />
                 </div>
               </div>
 
-              <div className="pt-2">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateInvoiceOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 rounded-xl hover:bg-slate-100 cursor-pointer"
+                >
+                  Annuler (إلغاء)
+                </button>
                 <button
                   type="submit"
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition-colors cursor-pointer shadow-xs"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl shadow-md cursor-pointer"
                 >
-                  حفظ وإصدار الفاتورة فورياً
+                  Enregistrer (حفظ وإصدار)
                 </button>
               </div>
             </form>

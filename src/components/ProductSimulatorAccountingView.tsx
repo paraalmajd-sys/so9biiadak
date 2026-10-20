@@ -45,6 +45,10 @@ import {
   Layers,
   ChevronRight,
   ShoppingBag,
+  Video,
+  Play,
+  Film,
+  Zap,
 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -448,37 +452,158 @@ const GLOBAL_MARKETS_HIERARCHY: Record<string, CountryMarketData> = {
   },
 };
 
+// Automatic Niche Presets with Linked Media, Margins & Strategy
+interface NichePreset {
+  id: string;
+  label: string;
+  defaultName: string;
+  problem: string;
+  targetGender: 'نساء' | 'رجال' | 'الجميع';
+  targetAge: string;
+  purchasePrice: number;
+  sellingPrice: number;
+  imageSample: string;
+  weight: 'light' | 'medium' | 'heavy';
+  fragile: boolean;
+  wowFactor: boolean;
+  typicalCpa: string;
+  conversionBenchmark: string;
+}
+
+const NICHE_PRESETS: Record<string, NichePreset> = {
+  cosmetics: {
+    id: 'cosmetics',
+    label: 'كوسميتيك ومواد التجميل والعناية (Cosmétiques)',
+    defaultName: 'سيروم الزيوت الطبيعية المعالجة لتساقط وتكثيف الشعر',
+    problem: 'تساقط الشعر والفراغات وتقوية البصيلات من الجذور',
+    targetGender: 'نساء',
+    targetAge: '25-35 سنة',
+    purchasePrice: 65,
+    sellingPrice: 249,
+    imageSample: getLocalImage('product_smartwatch_ultra_1792240155179.jpg'),
+    weight: 'light',
+    fragile: true,
+    wowFactor: true,
+    typicalCpa: '25 - 35 DH',
+    conversionBenchmark: '7.5% - 9.2%',
+  },
+  supplements: {
+    id: 'supplements',
+    label: 'مكملات غذائية وصحة (Compléments Alimentaires)',
+    defaultName: 'كبسولات سبيرولينا وأوميغا 3 الطبيعية النقية',
+    problem: 'الإرهاق المزمن، ضعف المناعة، وزيادة النشاط والحيوية',
+    targetGender: 'الجميع',
+    targetAge: '35-50 سنة',
+    purchasePrice: 80,
+    sellingPrice: 299,
+    imageSample: getLocalImage('product_earbuds_pro_1792240183002.jpg'),
+    weight: 'light',
+    fragile: false,
+    wowFactor: true,
+    typicalCpa: '28 - 42 DH',
+    conversionBenchmark: '6.8% - 8.5%',
+  },
+  electronics: {
+    id: 'electronics',
+    label: 'إلكترونيات وأجهزة ذكية (Électronique & Gadgets)',
+    defaultName: 'ساعة Ultra Titanium الذكية مع سماعات بلوتوث مجانية',
+    problem: 'تتبع اللياقة البدنية والاتصالات السريعة بمظهر فاخر وعصري',
+    targetGender: 'رجال',
+    targetAge: '18-25 سنة',
+    purchasePrice: 95,
+    sellingPrice: 349,
+    imageSample: getLocalImage('product_smartwatch_ultra_1792240155179.jpg'),
+    weight: 'light',
+    fragile: false,
+    wowFactor: true,
+    typicalCpa: '32 - 48 DH',
+    conversionBenchmark: '6.5% - 8.0%',
+  },
+  fashion: {
+    id: 'fashion',
+    label: 'أزياء وملابس وأحذية (Mode & Vêtements)',
+    defaultName: 'حذاء جلدي طبي مريح للعمل والخرجات اليومية',
+    problem: 'آلام القدمين والظهر أثناء الوقوف والمشي الطويل',
+    targetGender: 'رجال',
+    targetAge: '25-35 سنة',
+    purchasePrice: 110,
+    sellingPrice: 329,
+    imageSample: getLocalImage('product_smartwatch_ultra_1792240155179.jpg'),
+    weight: 'medium',
+    fragile: false,
+    wowFactor: false,
+    typicalCpa: '28 - 42 DH',
+    conversionBenchmark: '6.0% - 7.8%',
+  },
+  home: {
+    id: 'home',
+    label: 'لوازم المنزل والمطبخ (Maison & Cuisine)',
+    defaultName: 'فرامة الخضار واللحوم اللاسلكية الذكية سريعة الشحن',
+    problem: 'تضييع الوقت في تقطيع الخضار والمجهود الشاق في المطبخ',
+    targetGender: 'نساء',
+    targetAge: '25-35 سنة',
+    purchasePrice: 70,
+    sellingPrice: 249,
+    imageSample: getLocalImage('product_smartwatch_ultra_1792240155179.jpg'),
+    weight: 'medium',
+    fragile: false,
+    wowFactor: true,
+    typicalCpa: '22 - 32 DH',
+    conversionBenchmark: '7.2% - 9.5%',
+  },
+  accessories: {
+    id: 'accessories',
+    label: 'إكسسوارات وساعات فاخرة (Accessoires)',
+    defaultName: 'طقم ساعة فاخرة مع سوار ومحفظة جلدية بالعلبة الإهدائية',
+    problem: 'البحث عن هدية فاخرة أو إطلالة راقية في المناسبات',
+    targetGender: 'الجميع',
+    targetAge: '18-25 سنة',
+    purchasePrice: 85,
+    sellingPrice: 299,
+    imageSample: getLocalImage('product_smartwatch_ultra_1792240155179.jpg'),
+    weight: 'light',
+    fragile: false,
+    wowFactor: true,
+    typicalCpa: '26 - 38 DH',
+    conversionBenchmark: '6.5% - 8.2%',
+  },
+};
+
 export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccountingViewProps> = ({
   ads,
   onOpenCreateAd,
 }) => {
   const { isRtl } = useLanguage();
-  // Default to market fit simulator or keep user's active tab
   const [activeSuiteTab, setActiveSuiteTab] = useState<'simulator' | 'pricing_portfolio' | 'accounting'>('simulator');
 
   // ==========================================
   // 1. PRODUCT MARKET FIT SIMULATOR STATE
   // ==========================================
-  const [simProductImage, setSimProductImage] = useState<string>(getLocalImage('product_smartwatch_ultra_1792240155179.jpg'));
+  // Product Media: Images + Video
+  const [simProductImage, setSimProductImage] = useState<string>(NICHE_PRESETS.cosmetics.imageSample);
+  const [simProductVideo, setSimProductVideo] = useState<string | null>(null);
+  const [activeMediaPreviewTab, setActiveMediaPreviewTab] = useState<'image' | 'video'>('image');
   const simFileInputRef = useRef<HTMLInputElement>(null);
+  const simVideoInputRef = useRef<HTMLInputElement>(null);
 
-  const [simProductName, setSimProductName] = useState('سيروم الشعر الطبيعي بالزيوت المعالجة');
-  const [simNiche, setSimNiche] = useState<string>('كوسميتيك ومواد التجميل والعناية (Cosmétiques)');
-  const [simTargetGender, setSimTargetGender] = useState<'نساء' | 'رجال' | 'الجميع'>('نساء');
-  const [simTargetAge, setSimTargetAge] = useState<string>('25-35 سنة');
-  const [simProblemSolved, setSimProblemSolved] = useState<string>('تساقط الشعر والفراغات وتقوية البصيلات');
-  const [simSellingPrice, setSimSellingPrice] = useState<number>(249);
-  const [simPurchasePrice, setSimPurchasePrice] = useState<number>(65);
-  const [simWeight, setSimWeight] = useState<'light' | 'medium' | 'heavy'>('light');
-  const [simIsFragile, setSimIsFragile] = useState(false);
-  const [simHasWowFactor, setSimHasWowFactor] = useState(true);
+  const [simNicheKey, setSimNicheKey] = useState<string>('cosmetics');
+  const [simProductName, setSimProductName] = useState(NICHE_PRESETS.cosmetics.defaultName);
+  const [simNiche, setSimNiche] = useState<string>(NICHE_PRESETS.cosmetics.label);
+  const [simTargetGender, setSimTargetGender] = useState<'نساء' | 'رجال' | 'الجميع'>(NICHE_PRESETS.cosmetics.targetGender);
+  const [simTargetAge, setSimTargetAge] = useState<string>(NICHE_PRESETS.cosmetics.targetAge);
+  const [simProblemSolved, setSimProblemSolved] = useState<string>(NICHE_PRESETS.cosmetics.problem);
+  const [simSellingPrice, setSimSellingPrice] = useState<number>(NICHE_PRESETS.cosmetics.sellingPrice);
+  const [simPurchasePrice, setSimPurchasePrice] = useState<number>(NICHE_PRESETS.cosmetics.purchasePrice);
+  const [simWeight, setSimWeight] = useState<'light' | 'medium' | 'heavy'>(NICHE_PRESETS.cosmetics.weight);
+  const [simIsFragile, setSimIsFragile] = useState(NICHE_PRESETS.cosmetics.fragile);
+  const [simHasWowFactor, setSimHasWowFactor] = useState(NICHE_PRESETS.cosmetics.wowFactor);
 
   // Structured Cascading Dropdowns for Market Selection: Country -> Region -> City
   const [selectedCountryKey, setSelectedCountryKey] = useState<string>('morocco');
   const [selectedRegionKey, setSelectedRegionKey] = useState<string>('casablanca_settat');
   const [selectedCityKey, setSelectedCityKey] = useState<string>('casablanca');
 
-  // Bulletproof Country, Region, and City Objects (cannot crash or be undefined)
+  // Bulletproof Country, Region, and City Objects
   const safeCountryKey = (selectedCountryKey in GLOBAL_MARKETS_HIERARCHY) ? selectedCountryKey : 'morocco';
   const currentCountry = GLOBAL_MARKETS_HIERARCHY[safeCountryKey] || GLOBAL_MARKETS_HIERARCHY['morocco'];
 
@@ -499,11 +624,32 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
     deliveryRate: 84,
     avgCpa: '28 - 40 DH',
     deliveryTime: '24 ساعة (توصيل فوري)',
-    purchasingPower: 'عالية جداً' as const,
+    purchasingPower: 'عالية جداً',
     peakHours: 'من 13:00 إلى 15:30 ومن 21:00 إلى 00:30',
     bestSellingAngle: 'السرعة الفائقة في التوصيل وفخامة وجودة المنتج الأصلية',
     topCouriers: 'Cathedis, Sendit, Ozone Express, Amana',
     logisticNotes: 'أكبر سوق استهلاكي بالمغرب، نسبة تسليم ممتازة مع الموزعين المحليين.',
+  };
+
+  // Handle Niche Selection with Auto-Linking to Media & Presets
+  const handleSelectNiche = (key: string) => {
+    setSimNicheKey(key);
+    const preset = NICHE_PRESETS[key];
+    if (preset) {
+      setSimNiche(preset.label);
+      setSimProductName(preset.defaultName);
+      setSimProblemSolved(preset.problem);
+      setSimTargetGender(preset.targetGender);
+      setSimTargetAge(preset.targetAge);
+      setSimSellingPrice(preset.sellingPrice);
+      setSimPurchasePrice(preset.purchasePrice);
+      setSimWeight(preset.weight);
+      setSimIsFragile(preset.fragile);
+      setSimHasWowFactor(preset.wowFactor);
+      if (preset.imageSample) {
+        setSimProductImage(preset.imageSample);
+      }
+    }
   };
 
   // Handle Country Change safely
@@ -543,9 +689,20 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
       reader.onload = (event) => {
         if (event.target?.result) {
           setSimProductImage(event.target.result as string);
+          setActiveMediaPreviewTab('image');
         }
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle real video upload from PC/Phone
+  const handleSimVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const videoUrl = URL.createObjectURL(file);
+      setSimProductVideo(videoUrl);
+      setActiveMediaPreviewTab('video');
     }
   };
 
@@ -560,7 +717,7 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
     setSimNiche(ad.category);
   };
 
-  // Dynamic Product Market Fit Verdict Algorithm (Accurately factors in City, Niche, and Margins)
+  // Dynamic Product Market Fit Verdict Algorithm
   const marketFitVerdict = useMemo(() => {
     let score = 55;
     const reasons: { text: string; positive: boolean }[] = [];
@@ -594,9 +751,9 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
     if (currentCity.purchasingPower === 'عالية جداً' || currentCity.purchasingPower === 'عالية') {
       score += 8;
       reasons.push({ text: `قدرة شرائية مرتفعة في ${currentCity.name} تدعم سعر البيع المقترح (${simSellingPrice} ${currentCountry.currency}).`, positive: true });
-    } else if (currentCity.purchasingPower === 'حساسة للسعر' && simSellingPrice > 250) {
+    } else if (currentCity.purchasingPower.includes('حساسة للسعر') && simSellingPrice > 250) {
       score -= 12;
-      reasons.push({ text: `الزبناء في ${currentCity.name} حساسون للسعر؛ يُنصح بتقديم عرض تخفيضي أو باقة 2 حبات بسعر مغرٍ.`, positive: false });
+      reasons.push({ text: `الزبناء في ${currentCity.name} حساسون للسعر؛ يُنصح بتقديم باقة تخفيضية 2 حبات بسعر مغرٍ.`, positive: false });
     }
 
     // Niche Demand in COD
@@ -617,10 +774,10 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
 
     if (simIsFragile) {
       score -= 10;
-      reasons.push({ text: 'السلعة قابلة للكسر مما يقتضي تغليفاً محمياً لتفادي الإرجاع والتلف أثناء النقل.', positive: false });
+      reasons.push({ text: 'السلعة قابلة للكسر مما يقتضي تغليفاً فائق الحماية لتفادي الروتور أثناء النقل.', positive: false });
     } else {
       score += 4;
-      reasons.push({ text: 'السلعة مقاومة للصدمات وتتحمل ظروف الشحن بدون مخاطر تلف.', positive: true });
+      reasons.push({ text: 'السلعة صلبة وتتحمل ظروف الشحن بدون مخاطر تلف.', positive: true });
     }
 
     if (simHasWowFactor) {
@@ -632,7 +789,7 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
 
     let verdictType: 'success' | 'warning' | 'danger' = 'success';
     let verdictTitle = '🟢 نعم! المنتج مناسب ومربح جداً لهذا السوق';
-    let verdictDesc = `المؤشرات ممتازة جداً في ${currentCity.name}. المنتج يملك هامشاً وافياً وزاوية بيع قوية تضمن أرباحاً صافية ونسبة استلام مرتفعة.`;
+    let verdictDesc = `المؤشرات ممتازة جداً في ${currentCity.name}. السلعة تملك هامشاً وافياً وزاوية بيع قوية تضمن أرباحاً صافية ونسبة استلام مرتفعة.`;
 
     if (finalScore < 55) {
       verdictType = 'danger';
@@ -641,7 +798,7 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
     } else if (finalScore < 75) {
       verdictType = 'warning';
       verdictTitle = '🟡 مناسب بشروط مع ضرورة ضبط العرض والسعر';
-      verdictDesc = `يمكن تحقيق أرباح، شريطة تقديم باقة 2 حبات (Pack Promo) لرفع قيمة السلة وتأكيد العنوان هاتفياً قبل خروج الشحنة.`;
+      verdictDesc = `يمكن تحقيق أرباح شريطة تقديم باقة 2 حبات (Pack Promo) لرفع قيمة السلة وتأكيد العنوان هاتفياً قبل خروج الشحنة.`;
     }
 
     return {
@@ -666,7 +823,7 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
   const [calcPackaging, setCalcPackaging] = useState<number>(8);
   const [calcOrdersVolume, setCalcOrdersVolume] = useState<number>(300);
 
-  // Deep COD Profit Metrics
+  // Recalibrated Deep COD Profit & Ads Budget Metrics
   const profitMetrics = useMemo(() => {
     const totalLeads = Math.max(1, Number(calcOrdersVolume) || 100);
     const confirmedOrders = Math.round(totalLeads * ((Number(calcConfirmRate) || 80) / 100));
@@ -680,12 +837,26 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
     const shippingReturnsCost = returnedOrders * (Number(calcReturnCost) || 0);
     const packagingCost = confirmedOrders * (Number(calcPackaging) || 0);
 
-    const totalExpenses = productCost + adCost + shippingDeliveredCost + shippingReturnsCost + packagingCost;
+    const shippingTotalCost = shippingDeliveredCost + shippingReturnsCost;
+    const totalExpenses = productCost + adCost + shippingTotalCost + packagingCost;
     const netProfitTotal = totalRevenue - totalExpenses;
     const netProfitPerDelivered = deliveredOrders > 0 ? Math.round(netProfitTotal / deliveredOrders) : 0;
     const profitMarginPercent = totalRevenue > 0 ? Math.round((netProfitTotal / totalRevenue) * 100) : 0;
 
-    const totalCostWithoutAds = productCost + shippingDeliveredCost + shippingReturnsCost + packagingCost;
+    // Ads and Expense Ratios as Percentages of Total Revenue
+    const adCostSharePercent = totalRevenue > 0 ? Math.round((adCost / totalRevenue) * 100) : 0;
+    const cogsSharePercent = totalRevenue > 0 ? Math.round((productCost / totalRevenue) * 100) : 0;
+    const shippingSharePercent = totalRevenue > 0 ? Math.round((shippingTotalCost / totalRevenue) * 100) : 0;
+    const packagingSharePercent = totalRevenue > 0 ? Math.round((packagingCost / totalRevenue) * 100) : 0;
+
+    // Real Cost Per Delivered Order (CPA Réel par Colis Livré)
+    const realCpaPerDelivered = deliveredOrders > 0 ? Math.round(adCost / deliveredOrders) : 0;
+
+    // ROAS (Return On Ad Spend)
+    const roas = adCost > 0 ? (totalRevenue / adCost).toFixed(2) : '0';
+
+    // Breakeven CPA
+    const totalCostWithoutAds = productCost + shippingTotalCost + packagingCost;
     const breakevenCpa = totalLeads > 0 ? Math.round((totalRevenue - totalCostWithoutAds) / totalLeads) : 0;
 
     return {
@@ -699,9 +870,15 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
       netProfitPerDelivered,
       profitMarginPercent,
       adCost,
-      shippingTotalCost: shippingDeliveredCost + shippingReturnsCost,
+      adCostSharePercent,
+      cogsSharePercent,
+      shippingSharePercent,
+      packagingSharePercent,
+      shippingTotalCost,
       productCost,
       packagingCost,
+      realCpaPerDelivered,
+      roas,
       breakevenCpa,
     };
   }, [
@@ -814,7 +991,7 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
   return (
     <div className="space-y-5 pb-12 animate-in fade-in duration-200" dir={isRtl ? 'rtl' : 'ltr'}>
       {/* ========================================================
-          1. COMPACT TOP DASHBOARD HEADER (مصغرة ومريحة حسب الطلب)
+          1. COMPACT TOP DASHBOARD HEADER
          ======================================================== */}
       <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -843,7 +1020,7 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
       </div>
 
       {/* ========================================================
-          2. THE 3 DIRECT CHOICES ROW (الـ 3 ديال لو شوا من التحت مباشرة)
+          2. THE 3 DIRECT CHOICES ROW
          ======================================================== */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Choice 1: Market Fit Scanner */}
@@ -956,7 +1133,7 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-teal-600" />
               <span className="font-bold text-slate-800">
-                اختر منتجاً من متجرك أو ارفع صورة السلعة الخاصة بك من الحاسوب/الهاتف:
+                اختر منتجاً من متجرك أو ارفع صور وفيديوهات السلعة الخاصة بك:
               </span>
             </div>
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
@@ -972,24 +1149,145 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
             </div>
           </div>
 
+          {/* ==========================================================
+              HORIZONTAL MARKET SELECTOR BAR (الدولة، الجهة، المدينة في صف واحد أفقي)
+             ========================================================== */}
+          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Compass className="w-4 h-4 text-indigo-600" />
+                <h3 className="text-xs sm:text-sm font-black text-slate-900">
+                  تحديد المنطقة والسوق الجغرافي المستهدف (الدولة · الجهة · المدينة المستهدفة)
+                </h3>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-xl border border-indigo-100 shrink-0">
+                <span>{currentCountry.flag} {currentCountry.name}</span>
+                <ChevronRight className="w-3 h-3 text-indigo-400" />
+                <span>{currentRegion.name}</span>
+                <ChevronRight className="w-3 h-3 text-indigo-400" />
+                <span className="font-black text-indigo-900">{currentCity.name}</span>
+              </div>
+            </div>
+
+            {/* THE THREE SELECTORS IN ONE SINGLE HORIZONTAL ROW */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              {/* Selector 1: Country */}
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
+                <label className="font-black text-slate-700 flex items-center gap-1 text-[11px]">
+                  <Globe className="w-3.5 h-3.5 text-blue-600" />
+                  <span>1. الدولة المستهدفة (Pays):</span>
+                </label>
+                <select
+                  value={selectedCountryKey}
+                  onChange={(e) => handleCountryChange(e.target.value)}
+                  className="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold text-slate-900 focus:outline-none focus:border-indigo-600 cursor-pointer text-xs"
+                >
+                  {Object.keys(GLOBAL_MARKETS_HIERARCHY).map((cKey) => {
+                    const c = GLOBAL_MARKETS_HIERARCHY[cKey];
+                    return (
+                      <option key={c.id} value={c.id}>
+                        {c.flag} {c.name}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              {/* Selector 2: Region */}
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
+                <label className="font-black text-slate-700 flex items-center gap-1 text-[11px]">
+                  <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>2. الجهة / الإقليم (Région):</span>
+                </label>
+                <select
+                  value={safeRegionKey}
+                  onChange={(e) => handleRegionChange(e.target.value)}
+                  className="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold text-slate-900 focus:outline-none focus:border-indigo-600 cursor-pointer text-xs"
+                >
+                  {Object.keys(currentCountry.regions || {}).map((rKey) => {
+                    const r = currentCountry.regions[rKey];
+                    return (
+                      <option key={r.id} value={r.id}>
+                        {r.name}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              {/* Selector 3: City */}
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
+                <label className="font-black text-slate-700 flex items-center gap-1 text-[11px]">
+                  <Building className="w-3.5 h-3.5 text-purple-600" />
+                  <span>3. المدينة المستهدفة (Ville Cible):</span>
+                </label>
+                <select
+                  value={safeCityKey}
+                  onChange={(e) => setSelectedCityKey(e.target.value)}
+                  className="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold text-slate-900 focus:outline-none focus:border-indigo-600 cursor-pointer text-xs"
+                >
+                  {Object.keys(currentRegion.cities || {}).map((cKey) => {
+                    const city = currentRegion.cities[cKey];
+                    return (
+                      <option key={cKey} value={cKey}>
+                        {city.name}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* MAIN GRID: Product Media & Specs (Left) vs Market Consumption & Verdict (Right) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-            {/* Left: Product Inputs & Details with Real Image Upload (5 cols) */}
+            {/* Left Column: Product Media (Photos & Video) & Specs (5 cols) */}
             <div className="lg:col-span-5 space-y-4">
-              <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs space-y-4">
+              <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs space-y-4">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                   <div className="flex items-center gap-2">
                     <Package className="w-4 h-4 text-teal-600" />
                     <h3 className="text-xs sm:text-sm font-black text-slate-900">
-                      1. مواصفات السلعة وصورتها للتحليل
+                      ملفات ومواصفات السلعة (Photos & Vidéo)
                     </h3>
                   </div>
-                  <span className="text-[10px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full font-bold">
-                    معايير الفحص
+                  <span className="text-[10px] text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full font-bold">
+                    مربوط بالمجال
                   </span>
                 </div>
 
-                {/* Real Photo Upload from PC/Phone */}
-                <div className="space-y-2">
+                {/* MEDIA UPLOAD SECTION: Photos & Video */}
+                <div className="space-y-2.5">
+                  {/* Media View Toggle: Photo or Video */}
+                  <div className="flex items-center justify-between bg-slate-100 p-1 rounded-xl text-xs font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setActiveMediaPreviewTab('image')}
+                      className={`flex-1 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        activeMediaPreviewTab === 'image'
+                          ? 'bg-white text-slate-900 shadow-xs font-black'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <FolderOpen className="w-3.5 h-3.5 text-teal-600" />
+                      <span>صورة السلعة (Photo)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveMediaPreviewTab('video')}
+                      className={`flex-1 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        activeMediaPreviewTab === 'video'
+                          ? 'bg-white text-slate-900 shadow-xs font-black'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Video className="w-3.5 h-3.5 text-purple-600" />
+                      <span>فيديو إعلاني (Vidéo)</span>
+                      {simProductVideo && <span className="w-2 h-2 rounded-full bg-emerald-500" />}
+                    </button>
+                  </div>
+
+                  {/* Hidden Real Inputs */}
                   <input
                     type="file"
                     ref={simFileInputRef}
@@ -997,69 +1295,138 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
                     accept="image/*"
                     className="hidden"
                   />
-                  <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-900 border border-slate-200 shadow-xs flex items-center justify-center group">
-                    <img
-                      src={simProductImage}
-                      alt={simProductName}
-                      className="w-full h-full object-contain"
-                    />
+                  <input
+                    type="file"
+                    ref={simVideoInputRef}
+                    onChange={handleSimVideoUpload}
+                    accept="video/*"
+                    className="hidden"
+                  />
+
+                  {/* Media Preview Box */}
+                  <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-950 border border-slate-200 shadow-xs flex items-center justify-center group">
+                    {activeMediaPreviewTab === 'image' ? (
+                      <>
+                        <img
+                          src={simProductImage}
+                          alt={simProductName}
+                          className="w-full h-full object-contain"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => simFileInputRef.current?.click()}
+                          className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-black text-xs cursor-pointer backdrop-blur-[1px]"
+                        >
+                          <UploadCloud className="w-4 h-4" />
+                          <span>تغيير صورة السلعة من جهازك</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {simProductVideo ? (
+                          <video
+                            src={simProductVideo}
+                            controls
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <div className="text-center p-4 space-y-2 text-white">
+                            <Film className="w-8 h-8 text-purple-400 mx-auto" />
+                            <p className="text-xs font-bold">لا يوجد فيديو إعلاني مرفوع حالياً</p>
+                            <p className="text-[10px] text-slate-400">ارفع فيديو ترويجي لزيادة نسبة التحويل والتأكيد</p>
+                            <button
+                              type="button"
+                              onClick={() => simVideoInputRef.current?.click()}
+                              className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                            >
+                              + رفع فيديو السلعة الآن
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  {/* Dual Upload Action Buttons */}
+                  <div className="grid grid-cols-2 gap-2 text-xs">
                     <button
                       type="button"
                       onClick={() => simFileInputRef.current?.click()}
-                      className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-black text-xs cursor-pointer backdrop-blur-[1px]"
+                      className="py-2 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer border border-slate-200"
                     >
-                      <UploadCloud className="w-4 h-4" />
-                      <span>أبلود صورة جديدة من جهازك</span>
+                      <UploadCloud className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                      <span className="truncate">+ رفع صورة (Photo)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => simVideoInputRef.current?.click()}
+                      className="py-2 px-2.5 bg-purple-50 hover:bg-purple-100 text-purple-900 font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer border border-purple-200"
+                    >
+                      <Video className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                      <span className="truncate">+ رفع فيديو (Vidéo)</span>
                     </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => simFileInputRef.current?.click()}
-                    className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer border border-slate-200"
-                  >
-                    <FolderOpen className="w-4 h-4 text-teal-600" />
-                    <span>+ أبلود صورة السلعة من حاسوبك أو هاتفك (PC / Téléphone)</span>
-                  </button>
                 </div>
 
+                {/* AUTOMATIC NICHE PRESET SELECTOR (ربط تلقائي بمجال المنتج) */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <label className="font-black text-slate-700 flex items-center gap-1">
+                      <Zap className="w-3.5 h-3.5 text-amber-500" />
+                      <span>المجال / الصنف (Niche):</span>
+                    </label>
+                    <span className="text-[10px] text-emerald-600 font-bold">
+                      يربط الإعدادات تلقائياً
+                    </span>
+                  </div>
+
+                  {/* Quick Niche Pills */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[11px]">
+                    {[
+                      { key: 'cosmetics', name: 'كوسميتيك' },
+                      { key: 'supplements', name: 'مكملات' },
+                      { key: 'electronics', name: 'إلكترونيات' },
+                      { key: 'fashion', name: 'أزياء' },
+                      { key: 'home', name: 'المنزل' },
+                      { key: 'accessories', name: 'إكسسوارات' },
+                    ].map((n) => (
+                      <button
+                        key={n.key}
+                        type="button"
+                        onClick={() => handleSelectNiche(n.key)}
+                        className={`p-1.5 rounded-lg font-bold border transition-all cursor-pointer text-center ${
+                          simNicheKey === n.key
+                            ? 'bg-teal-600 text-white border-teal-600 shadow-2xs'
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        {n.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Product Detail Fields */}
                 <div className="space-y-3 text-xs pt-1">
-                  {/* Product Title */}
                   <div>
                     <label className="font-bold text-slate-700 block mb-1">اسم المنتج أو السلعة *</label>
                     <input
                       type="text"
                       value={simProductName}
                       onChange={(e) => setSimProductName(e.target.value)}
-                      placeholder="مثال: سيروم الزيت المعالج لتساقط الشعر، كريم تبييض..."
-                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-teal-500"
+                      placeholder="اسم المنتج..."
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-teal-500 text-xs"
                     />
                   </div>
 
-                  {/* Niche / Category with Presets */}
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1">المجال / الصنف (Niche) *</label>
-                    <select
-                      value={simNiche}
-                      onChange={(e) => setSimNiche(e.target.value)}
-                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-teal-500 cursor-pointer"
-                    >
-                      <option value="كوسميتيك ومواد التجميل والعناية (Cosmétiques)">كوسميتيك ومواد التجميل والعناية (Cosmétiques)</option>
-                      <option value="مكملات غذائية وصحة (Compléments Alimentaires)">مكملات غذائية وصحة (Compléments Alimentaires)</option>
-                      <option value="إلكترونيات وأجهزة ذكية (Électronique & Gadgets)">إلكترونيات وأجهزة ذكية (Électronique & Gadgets)</option>
-                      <option value="أزياء وملابس وأحذية (Mode & Vêtements)">أزياء وملابس وأحذية (Mode & Vêtements)</option>
-                      <option value="لوازم المنزل والمطبخ (Maison & Cuisine)">لوازم المنزل والمطبخ (Maison & Cuisine)</option>
-                      <option value="إكسسوارات وساعات فاخرة (Accessoires)">إكسسوارات وساعات فاخرة (Accessoires)</option>
-                    </select>
-                  </div>
-
                   {/* Target Gender & Age */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2.5">
                     <div>
                       <label className="font-bold text-slate-700 block mb-1">الفئة المستهدفة:</label>
                       <select
                         value={simTargetGender}
                         onChange={(e) => setSimTargetGender(e.target.value as any)}
-                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 cursor-pointer"
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 cursor-pointer text-xs"
                       >
                         <option value="نساء">نساء (Femmes)</option>
                         <option value="رجال">رجال (Hommes)</option>
@@ -1072,11 +1439,11 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
                       <select
                         value={simTargetAge}
                         onChange={(e) => setSimTargetAge(e.target.value)}
-                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 cursor-pointer"
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 cursor-pointer text-xs"
                       >
-                        <option value="18-25 سنة">18 - 25 سنة (شباب)</option>
-                        <option value="25-35 سنة">25 - 35 سنة (نشطون)</option>
-                        <option value="35-50 سنة">35 - 50 سنة (قوة شرائية)</option>
+                        <option value="18-25 سنة">18 - 25 سنة</option>
+                        <option value="25-35 سنة">25 - 35 سنة</option>
+                        <option value="35-50 سنة">35 - 50 سنة</option>
                         <option value="+50 سنة">+50 سنة</option>
                         <option value="كل الأعمار">كل الأعمار</option>
                       </select>
@@ -1090,20 +1457,20 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
                       type="text"
                       value={simProblemSolved}
                       onChange={(e) => setSimProblemSolved(e.target.value)}
-                      placeholder="مثال: تساقط الشعر والفراغات، آلام المفاصل، الوزن والكرش..."
-                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:outline-none focus:border-teal-500"
+                      placeholder="المشكل المحلول..."
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:outline-none focus:border-teal-500 text-xs"
                     />
                   </div>
 
                   {/* Prices */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2.5">
                     <div>
                       <label className="font-bold text-slate-700 block mb-1">سعر الشراء بالجملة ({currentCountry.currency})</label>
                       <input
                         type="number"
                         value={simPurchasePrice}
                         onChange={(e) => setSimPurchasePrice(Number(e.target.value))}
-                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-slate-900"
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-black text-slate-900 text-xs"
                       />
                     </div>
                     <div>
@@ -1112,15 +1479,15 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
                         type="number"
                         value={simSellingPrice}
                         onChange={(e) => setSimSellingPrice(Number(e.target.value))}
-                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-emerald-700"
+                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-black text-emerald-700 text-xs"
                       />
                     </div>
                   </div>
 
                   {/* Weight Selector */}
-                  <div className="pt-1">
+                  <div>
                     <span className="font-bold text-slate-700 block mb-1">وزن السلعة المقدر:</span>
-                    <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
                       {[
                         { id: 'light', label: 'خفيف (<500g)' },
                         { id: 'medium', label: 'متوسط (500g-2kg)' },
@@ -1130,7 +1497,7 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
                           key={w.id}
                           type="button"
                           onClick={() => setSimWeight(w.id as any)}
-                          className={`p-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                          className={`p-1.5 rounded-xl border text-[11px] font-bold transition-all cursor-pointer ${
                             simWeight === w.id
                               ? 'bg-teal-600 text-white shadow-xs font-black'
                               : 'bg-slate-50 border-slate-200 text-slate-700'
@@ -1143,23 +1510,23 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
                   </div>
 
                   {/* Characteristic Checkboxes */}
-                  <div className="grid grid-cols-2 gap-2 pt-1">
-                    <label className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
+                  <div className="grid grid-cols-2 gap-2 pt-0.5">
+                    <label className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
                       <input
                         type="checkbox"
                         checked={simHasWowFactor}
                         onChange={(e) => setSimHasWowFactor(e.target.checked)}
-                        className="w-4 h-4 accent-teal-600"
+                        className="w-3.5 h-3.5 accent-teal-600"
                       />
                       <span className="text-[11px] font-bold text-slate-800">ميزة إبهار (Wow Factor)</span>
                     </label>
 
-                    <label className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
+                    <label className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
                       <input
                         type="checkbox"
                         checked={simIsFragile}
                         onChange={(e) => setSimIsFragile(e.target.checked)}
-                        className="w-4 h-4 accent-rose-600"
+                        className="w-3.5 h-3.5 accent-rose-600"
                       />
                       <span className="text-[11px] font-bold text-slate-800">قابلة للكسر (زجاج/سائل)</span>
                     </label>
@@ -1168,93 +1535,9 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
               </div>
             </div>
 
-            {/* Right: Cascading Dropdowns & Market Analytics (7 cols) */}
+            {/* Right Column: Detailed Consumption & Decision (7 cols) */}
             <div className="lg:col-span-7 space-y-4">
-              {/* CASCADING MARKET SELECTION BOXES (Country -> Region -> Target City) */}
-              <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-2xs space-y-3.5">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <Compass className="w-4 h-4 text-indigo-600" />
-                    <h3 className="text-xs sm:text-sm font-black text-slate-900">
-                      2. اختيار السوق والجهة والمدينة المستهدفة (Market Selector)
-                    </h3>
-                  </div>
-                  <span className="text-xs font-black text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-100">
-                    {currentCountry.flag} {currentCountry.name}
-                  </span>
-                </div>
-
-                {/* 3 Structured Cascading Dropdown Boxes */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                  {/* Dropdown 1: Country */}
-                  <div>
-                    <label className="font-black text-slate-700 block mb-1 flex items-center gap-1">
-                      <Globe className="w-3.5 h-3.5 text-blue-600" />
-                      <span>1. الدولة المستهدفة:</span>
-                    </label>
-                    <select
-                      value={selectedCountryKey}
-                      onChange={(e) => handleCountryChange(e.target.value)}
-                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-indigo-600 cursor-pointer"
-                    >
-                      {Object.keys(GLOBAL_MARKETS_HIERARCHY).map((cKey) => {
-                        const c = GLOBAL_MARKETS_HIERARCHY[cKey];
-                        return (
-                          <option key={c.id} value={c.id}>
-                            {c.flag} {c.name}
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </div>
-
-                  {/* Dropdown 2: Region */}
-                  <div>
-                    <label className="font-black text-slate-700 block mb-1 flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>2. الجهة / الإقليم:</span>
-                    </label>
-                    <select
-                      value={safeRegionKey}
-                      onChange={(e) => handleRegionChange(e.target.value)}
-                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-indigo-600 cursor-pointer"
-                    >
-                      {Object.keys(currentCountry.regions || {}).map((rKey) => {
-                        const r = currentCountry.regions[rKey];
-                        return (
-                          <option key={r.id} value={r.id}>
-                            {r.name}
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </div>
-
-                  {/* Dropdown 3: City */}
-                  <div>
-                    <label className="font-black text-slate-700 block mb-1 flex items-center gap-1">
-                      <Building className="w-3.5 h-3.5 text-purple-600" />
-                      <span>3. المدينة المستهدفة:</span>
-                    </label>
-                    <select
-                      value={safeCityKey}
-                      onChange={(e) => setSelectedCityKey(e.target.value)}
-                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-indigo-600 cursor-pointer"
-                    >
-                      {Object.keys(currentRegion.cities || {}).map((cKey) => {
-                        const city = currentRegion.cities[cKey];
-                        return (
-                          <option key={cKey} value={cKey}>
-                            {city.name}
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* DETAILED RESULTS & CONSUMPTION / CONVERSION ESTIMATE */}
+              {/* CONSUMPTION & CONVERSION ESTIMATE CARD */}
               <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-5 shadow-lg space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-white/10">
                   <div>
@@ -1271,9 +1554,9 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
                   </div>
                 </div>
 
-                {/* The 4 Core Key Metrics requested by the User */}
+                {/* The 4 Core Key Metrics */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  {/* Metric 1: Consommation / Demand volume */}
+                  {/* Metric 1: Consommation */}
                   <div className="bg-white/5 p-3.5 rounded-xl border border-white/10 space-y-1">
                     <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1.5">
                       <ShoppingBag className="w-3.5 h-3.5" />
@@ -1330,7 +1613,7 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
                   </div>
                 </div>
 
-                {/* Best Selling Angle & Recommendations */}
+                {/* Best Selling Angle */}
                 <div className="p-3 bg-white/5 rounded-xl border border-white/10 text-xs space-y-1.5">
                   <div className="flex items-center gap-1.5 font-black text-amber-300">
                     <Sparkles className="w-4 h-4" />
@@ -1345,7 +1628,7 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
                 </div>
               </div>
 
-              {/* Verdict Card (هل البرودوي خدام لداك السوق ولا لا) */}
+              {/* Verdict Card */}
               <div
                 className={`rounded-2xl p-4 sm:p-5 border shadow-sm space-y-3 ${
                   marketFitVerdict.verdictType === 'success'
@@ -1392,26 +1675,36 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
       )}
 
       {/* ========================================================
-          SUITE 2: PRICING & PROFIT CALCULATOR (WIDE & HORIZONTAL AT TOP!)
+          SUITE 2: PRICING & PROFIT CALCULATOR
+          (مع تنسيق ميزانية الإعلانات والأرباح المتوقعة كنسبة مئوية بصورة بصرية واضحة)
          ======================================================== */}
       {activeSuiteTab === 'pricing_portfolio' && (
         <div className="space-y-5 animate-in fade-in duration-150">
-          {/* HORIZONTAL SUMMARY BAR AT THE TOP (عريضة وأفقية الفوق كطلب المستخدم) */}
+          {/* VISUAL DASHBOARD: Wide Horizontal Financial Summary Bar */}
           <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-5 sm:p-6 shadow-lg space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
               <div>
                 <span className="text-xs font-bold text-amber-400 block">
-                  الملخص المالي الشامل لحملة الدفع عند الاستلام (COD)
+                  الملخص المالي الشامل لحملة الدفع عند الاستلام (COD Marge & Budget)
                 </span>
                 <h3 className="text-base sm:text-lg font-black text-white">
-                  الأرباح الصافية الحقيقية بعد خصم جميع التكاليف
+                  الأرباح الصافية الحقيقية بعد خصم جميع التكاليف وميزانية الإشهار
                 </h3>
               </div>
+
+              {/* Expected Profit Percentage Badge */}
               <div className="flex items-center gap-2">
-                <span className="text-xs bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full font-black border border-emerald-500/30">
-                  هامش صافي {profitMetrics.profitMarginPercent}%
-                </span>
-                <span className="text-xs bg-white/10 text-slate-300 px-3 py-1 rounded-full font-bold">
+                <div className={`px-3 py-1.5 rounded-xl font-black text-xs sm:text-sm border flex items-center gap-1.5 ${
+                  profitMetrics.profitMarginPercent >= 35
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                    : profitMetrics.profitMarginPercent >= 20
+                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                    : 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                }`}>
+                  <Percent className="w-4 h-4" />
+                  <span>صافي هامش الربح المتوقع: {profitMetrics.profitMarginPercent}%</span>
+                </div>
+                <span className="text-xs bg-white/10 text-slate-300 px-3 py-1 rounded-xl font-bold">
                   {profitMetrics.totalLeads} طلبية واردة
                 </span>
               </div>
@@ -1425,7 +1718,9 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
                 <div className="text-2xl sm:text-3xl font-black text-emerald-400">
                   {profitMetrics.netProfitTotal.toLocaleString()} <span className="text-sm">DH</span>
                 </div>
-                <span className="text-[10px] text-emerald-300 block">ربح صافي بعد كل المصاريف</span>
+                <span className="text-[10px] text-emerald-300 font-bold block">
+                  ربح صافي حقيقي بعد كل المصاريف
+                </span>
               </div>
 
               {/* Card 2: Net Profit Per Delivered */}
@@ -1458,23 +1753,79 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
               </div>
             </div>
 
-            {/* Horizontal Financial Breakdown Strip */}
-            <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-1.5 text-slate-300">
-                <span className="font-bold">المداخيل الإجمالية:</span>
-                <span className="text-emerald-400 font-black">{profitMetrics.totalRevenue.toLocaleString()} DH</span>
+            {/* VISUAL MULTI-SEGMENT BREAKDOWN BAR (توزيع كل 100 درهم بصورة بصرية واضحة) */}
+            <div className="p-3.5 bg-white/5 rounded-xl border border-white/10 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-slate-300 flex items-center gap-1.5">
+                  <PieChart className="w-3.5 h-3.5 text-teal-400" />
+                  <span>توزيع المداخيل الإجمالية كنسب مئوية (Répartition du CA):</span>
+                </span>
+                <span className="font-mono text-emerald-400 font-bold">100% = {profitMetrics.totalRevenue.toLocaleString()} DH</span>
               </div>
-              <div className="flex items-center gap-1.5 text-slate-300">
-                <span className="font-bold">ميزانية الإعلانات (CPA):</span>
-                <span className="text-purple-400 font-black">{profitMetrics.adCost.toLocaleString()} DH</span>
+
+              {/* Visual Progress Bar */}
+              <div className="w-full h-3.5 bg-slate-800 rounded-full overflow-hidden flex shadow-inner">
+                <div
+                  style={{ width: `${Math.max(0, profitMetrics.profitMarginPercent)}%` }}
+                  className="bg-emerald-500 h-full transition-all"
+                  title={`أرباح صافية: ${profitMetrics.profitMarginPercent}%`}
+                />
+                <div
+                  style={{ width: `${Math.max(0, profitMetrics.adCostSharePercent)}%` }}
+                  className="bg-purple-500 h-full transition-all"
+                  title={`ميزانية الإعلانات: ${profitMetrics.adCostSharePercent}%`}
+                />
+                <div
+                  style={{ width: `${Math.max(0, profitMetrics.cogsSharePercent)}%` }}
+                  className="bg-blue-500 h-full transition-all"
+                  title={`تكلفة السلع بالجملة: ${profitMetrics.cogsSharePercent}%`}
+                />
+                <div
+                  style={{ width: `${Math.max(0, profitMetrics.shippingSharePercent)}%` }}
+                  className="bg-rose-500 h-full transition-all"
+                  title={`الشحن والروتور: ${profitMetrics.shippingSharePercent}%`}
+                />
               </div>
-              <div className="flex items-center gap-1.5 text-slate-300">
-                <span className="font-bold">تكلفة السلع بالجملة:</span>
-                <span className="text-blue-400 font-black">{profitMetrics.productCost.toLocaleString()} DH</span>
+
+              {/* Color Legend */}
+              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] pt-1">
+                <div className="flex items-center gap-1.5 text-emerald-300">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                  <span className="font-bold">صافي الأرباح: {profitMetrics.profitMarginPercent}%</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-purple-300">
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+                  <span className="font-bold">ميزانية الإعلانات: {profitMetrics.adCostSharePercent}%</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-blue-300">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                  <span className="font-bold">تكلفة السلع: {profitMetrics.cogsSharePercent}%</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-rose-300">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                  <span className="font-bold">الشحن والروتور: {profitMetrics.shippingSharePercent}%</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5 text-slate-300">
-                <span className="font-bold">تكاليف التوصيل والروتور:</span>
-                <span className="text-rose-400 font-black">{profitMetrics.shippingTotalCost.toLocaleString()} DH</span>
+            </div>
+
+            {/* DEDICATED ADS BUDGET & SPEND CARD */}
+            <div className="pt-2 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="p-2.5 bg-white/5 rounded-xl border border-white/10 space-y-0.5">
+                <span className="text-slate-400 font-bold block text-[11px]">ميزانية الإعلانات الإجمالية (Budget Ads):</span>
+                <span className="text-base font-black text-purple-300 block">{profitMetrics.adCost.toLocaleString()} DH</span>
+                <span className="text-[10px] text-slate-400 block">لجلب {profitMetrics.totalLeads} طلبية واردة</span>
+              </div>
+
+              <div className="p-2.5 bg-white/5 rounded-xl border border-white/10 space-y-0.5">
+                <span className="text-slate-400 font-bold block text-[11px]">CPA الفعلي لكل تسليم (Par Colis):</span>
+                <span className="text-base font-black text-white block">{profitMetrics.realCpaPerDelivered} DH</span>
+                <span className="text-[10px] text-amber-300 block">مقارنة بنقطة التعادل ({profitMetrics.breakevenCpa} DH)</span>
+              </div>
+
+              <div className="p-2.5 bg-white/5 rounded-xl border border-white/10 space-y-0.5">
+                <span className="text-slate-400 font-bold block text-[11px]">عائد الإنفاق الإعلاني (ROAS):</span>
+                <span className="text-base font-black text-emerald-400 block">{profitMetrics.roas}x</span>
+                <span className="text-[10px] text-emerald-300 block">كل 1 درهم إعلانات يولد {profitMetrics.roas} درهم مداخيل</span>
               </div>
             </div>
           </div>
@@ -1487,7 +1838,7 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
                   محددات وإعدادات حساب الأرباح الواقعية لتجارة الدفع عند الاستلام
                 </h3>
                 <p className="text-xs text-slate-500">
-                  حرك المؤشرات لملاحظة تأثير نسبة التأكيد وتكلفة الإعلان على صافي أرباحك في الأعلى
+                  حرك المؤشرات لملاحظة تأثير ميزانية الإعلانات ونسب التسليم على نسبة الأرباح المتوقعة
                 </p>
               </div>
               <Sliders className="w-5 h-5 text-emerald-600" />
@@ -1552,7 +1903,7 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
               {/* 4. CPA Ads */}
               <div className="space-y-1.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="flex justify-between text-xs font-bold">
-                  <span className="text-slate-700">تكلفة الإشهار لكل طلبية (CPA):</span>
+                  <span className="text-slate-700">تكلفة الإشهار لكل طلبية (CPA Ads):</span>
                   <span className="text-purple-700 font-black text-sm">{calcCpaAds} DH</span>
                 </div>
                 <input
@@ -1620,7 +1971,7 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
                 className="w-full accent-emerald-600 cursor-pointer"
               />
               <span className="text-[10px] text-emerald-800 block">
-                تحديد حجم الحملة لتقدير صافي الأرباح الشهرية بدقة ومراقبة نقطة التعادل
+                تحديد حجم الحملة لتقدير ميزانية الإعلانات الإجمالية وصافي الأرباح ونقطة التعادل
               </span>
             </div>
           </div>
@@ -1629,11 +1980,10 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
 
       {/* ========================================================
           SUITE 3: ACCOUNTING & INVOICES (COMPTABILITÉ & FACTURES)
-          (مضبوطة ومقادة بالفرنسية والعربية وبحجم متناسق ومريح)
          ======================================================== */}
       {activeSuiteTab === 'accounting' && (
         <div className="space-y-5 animate-in fade-in duration-150">
-          {/* Accounting KPI Cards (Daily / Monthly / Yearly) with Clear French Badges */}
+          {/* Accounting KPI Cards (Daily / Monthly / Yearly) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             {/* Card 1: Chiffre d'Affaires */}
             <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs space-y-1.5">
@@ -1750,7 +2100,7 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
             </div>
           </div>
 
-          {/* Invoices Table with Clear French/Arabic Headings */}
+          {/* Invoices Table */}
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-right text-xs">
@@ -1812,7 +2162,7 @@ export const ProductSimulatorAccountingView: React.FC<ProductSimulatorAccounting
       )}
 
       {/* ========================================================
-          INVOICE PREVIEW MODAL (Printable & Exportable)
+          INVOICE PREVIEW MODAL
          ======================================================== */}
       {selectedInvoiceForModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">

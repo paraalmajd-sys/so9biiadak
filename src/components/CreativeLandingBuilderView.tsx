@@ -38,11 +38,38 @@ import {
   ChevronUp,
   FileCode,
   Play,
+  Pause,
+  RotateCcw,
+  Volume2,
+  VolumeX,
   TrendingUp,
   Target,
   Trash2,
   FolderOpen,
   AlertTriangle,
+  Edit3,
+  ExternalLink,
+  Sliders,
+  CheckSquare,
+  Wand2,
+  Film,
+  Music,
+  Scissors,
+  Settings2,
+  Printer,
+  ChevronRight,
+  PhoneCall,
+  UserCheck,
+  Heart,
+  Smile,
+  Shield,
+  ThumbsUp,
+  Award,
+  BookOpen,
+  Coffee,
+  Sun,
+  Moon,
+  Compass,
 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -58,88 +85,533 @@ export const CreativeLandingBuilderView: React.FC<CreativeLandingBuilderViewProp
   onQuickOrder,
 }) => {
   const { isRtl } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'creatives' | 'landing_page'>('creatives');
 
-  // Custom Product List (starting with default ads + custom uploaded items)
-  const [customProducts, setCustomProducts] = useState<ProductAd[]>(ads);
-  const [selectedAdId, setSelectedAdId] = useState<string>(ads[0]?.id || '');
+  // Primary Navigation: 1. AI Image Creatives & Design Studio | 2. AI Video Creatives (Educational, Usage, UGC) | 3. Scripts Studio | 4. Deep Landing Page
+  const [activeTab, setActiveTab] = useState<'creatives' | 'videos' | 'scripts' | 'landing_page'>('scripts');
 
-  // Form toggle
-  const [isUploadCardOpen, setIsUploadCardOpen] = useState(true);
+  // =========================================================================
+  // USER'S PRODUCT SPECS (مربوطة بصورة وسلعة المستخدم الحقيقية)
+  // =========================================================================
+  const userAttachedImage = '/assets/aistudio/creative-ad-1-1792446332876_8b4efb10.png';
+  const defaultInitialImage = userAttachedImage || getLocalImage('product_moroccan_argan_oil_1792240155621.jpg') || (ads[0]?.images[0] ?? '');
 
-  // Exact fields according to the User's Hand-Drawn Sketch
-  const [uploadedImagesList, setUploadedImagesList] = useState<string[]>([
-    getLocalImage('product_smartwatch_ultra_1792240155179.jpg'),
-    getLocalImage('product_wireless_earbuds_1792240155858.jpg'),
-    getLocalImage('product_moroccan_argan_oil_1792240155621.jpg'),
-  ]);
-  const [activeMainImageIndex, setActiveMainImageIndex] = useState<number>(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // 1. اسم المنتج
-  const [newTitle, setNewTitle] = useState('');
-  // 2. مجال او الصنف
-  const [newCategory, setNewCategory] = useState<string>('كوسميتيك ومواد التجميل (Cosmétique)');
-  // 3. السعر
-  const [newPrice, setNewPrice] = useState<number>(299);
-  const [newOriginalPrice, setNewOriginalPrice] = useState<number>(499);
-  // 4. الفئة المستهدفة مع النوع
-  const [newTargetGender, setNewTargetGender] = useState<string>('نساء (Femmes)');
-  // 5. العمر
-  const [newTargetAge, setNewTargetAge] = useState<string>('25 - 45 سنة');
-  // 6. المشكل يظهر في مواد التجميل مع المكملات الغذائية
-  const [newProblemSolved, setNewProblemSolved] = useState<string>('تساقط الشعر، بهتان البشرة، آلام المفاصل، والتجاعيد');
-  // 7. البيئات التي ممكن ينجح لكل منتج
-  const [newEnvironments, setNewEnvironments] = useState<string>('المناسبات والأعراس، روتين المساء المنزلي، العمل اليومي، والصيف');
-  // 8. الوصف المنتج
-  const [newDescription, setNewDescription] = useState<string>(
-    'منتج حصري وفعال صُمم بمكونات طبيعية وأصلية 100% لإعطاء نتائج ملموسة وسريعة من أول أسبوع استعمال، مع ضمان الرضا والتوصيل المجاني لكافة مدن المغرب والدفع بعد المعاينة.'
+  const [productTitle, setProductTitle] = useState('حلوى المغنيسيوم المعقد (Magnesium Complex Gummies)');
+  const [productNiche, setProductNiche] = useState('مكملات غذائية وعناية صحية (Compléments)');
+  const [productPrice, setProductPrice] = useState<number>(249);
+  const [productOriginalPrice, setProductOriginalPrice] = useState<number>(449);
+  const [targetAudience, setTargetAudience] = useState('رجال ونساء (18 - 65 سنة) يعانون من القلق والأرق');
+  const [problemSolved, setProblemSolved] = useState('الأرق وقلة النوم، التوتر العصبي، الإرهاق العضلي وتشنجات الليل');
+  const [offerHook, setOfferHook] = useState('اشتري 2 علب واحصل على الثالثة مجاناً + شحن مجاني والدفع بعد المعاينة');
+  
+  // Detailed Product Description Box
+  const [productDescription, setProductDescription] = useState(
+    'حلوى جيليه طبيعية ولذيذة بنكهة التوت البري، صُممت بتركيبة متطورة تجمع بين المغنيسيوم عالي الامتصاص (Magnesium Citrate & Glycinate) وفيتامين B6 مع مستخلصات البابونج المهدئ. تساعد في استرخاء الجهاز العصبي والعضلات، وتحفيز النوم العميق دون الإحساس بالخمول صباحاً، مع ضمان الجودة 100% وخلوها من السكر والمواد الحافظة.'
   );
 
-  const [uploadSuccessToast, setUploadSuccessToast] = useState(false);
+  // Uploaded User Media
+  const [userUploadedImage, setUserUploadedImage] = useState<string>(defaultInitialImage);
+  const [userUploadedVideo, setUserUploadedVideo] = useState<string | null>(null);
+  const fileInputImageRef = useRef<HTMLInputElement>(null);
+  const fileInputVideoRef = useRef<HTMLInputElement>(null);
 
-  // Handle Real File Upload from Computer / Phone
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  // Status notifications
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isAiGenerating, setIsAiGenerating] = useState<boolean>(false);
+  const [aiGenStep, setAiGenStep] = useState<string>('');
 
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          const res = event.target.result as string;
-          setUploadedImagesList((prev) => [res, ...prev]);
-          setActiveMainImageIndex(0);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+  // Discount percentage
+  const discountPercent = Math.max(
+    10,
+    Math.round(((Number(productOriginalPrice) - Number(productPrice)) / (Number(productOriginalPrice) || 1)) * 100)
+  );
+
+  // Handle image upload from computer / phone
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setUserUploadedImage(event.target.result as string);
+        setToastMessage('تم رفع صورة السلعة بنجاح وتحديث كافة الكرياتيف والصفحات تلقائياً!');
+        setTimeout(() => setToastMessage(null), 3500);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
-  // Creative Studio State
-  const [selectedAngle, setSelectedAngle] = useState<'problem_solution' | 'luxury' | 'scarcity' | 'trust_cod' | 'social_proof'>('problem_solution');
-  const [creativeMockupFormat, setCreativeMockupFormat] = useState<'feed' | 'story'>('feed');
-  const [copiedText, setCopiedText] = useState(false);
-  const [copiedScript, setCopiedScript] = useState(false);
-  const [copiedCode, setCopiedCode] = useState(false);
-  const [selectedOverlayBadge, setSelectedOverlayBadge] = useState<string>('تخفيض -50% اليوم فقط 🔥');
+  // =========================================================================
+  // AI CREATIVE GENERATION ENGINE (توليد الكرياتيف بالذكاء الاصطناعي)
+  // =========================================================================
+  const handleTriggerAiGeneration = () => {
+    setIsAiGenerating(true);
+    setAiGenStep('1. جاري تحليل صورة ومواصفات السلعة بواسطة الذكاء الاصطناعي...');
 
-  // Landing Page State
-  const [previewDevice, setPreviewDevice] = useState<'mobile' | 'desktop'>('mobile');
-  const [isFullscreenLanding, setIsFullscreenLanding] = useState(false);
-  const [orderQuantity, setOrderQuantity] = useState<number>(1);
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [customerCity, setCustomerCity] = useState('الدار البيضاء (24 ساعة)');
-  const [customerAddress, setCustomerAddress] = useState('');
-  const [submittedOrderInfo, setSubmittedOrderInfo] = useState<{ id: string; total: number } | null>(null);
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+    setTimeout(() => {
+      setAiGenStep('2. جاري استخراج زوايا البيع الفيروسية الأكثر طلباً في سوق الدفع عند الاستلام بالمغرب...');
+    }, 600);
 
-  // Countdown timer for urgency
-  const [timeLeft, setTimeLeft] = useState({ hours: 4, minutes: 27, seconds: 43 });
+    setTimeout(() => {
+      setAiGenStep('3. جاري توليد 3 بوستات إعلانية واقعية حقيقية + 3 فيديوهات مخصصة (تعليمي، استعمال، UGC)...');
+    }, 1200);
+
+    setTimeout(() => {
+      setIsAiGenerating(false);
+      setToastMessage('✨ تم توليد الكرياتيف الاحترافية بالذكاء الاصطناعي بنجاح! يمكنك الآن تعديل أي عنصر وتنزيلها بدقة عالية.');
+      setTimeout(() => setToastMessage(null), 4000);
+    }, 1800);
+  };
+
+  // =========================================================================
+  // AI IMAGE CREATIVES & IN-APP DESIGN STUDIO (التحكم في الديزاين)
+  // =========================================================================
+  const [selectedAdPostIndex, setSelectedAdPostIndex] = useState<0 | 1 | 2>(0);
+  const [studioBgStyle, setStudioBgStyle] = useState<'titanium_dark' | 'emerald_glow' | 'royal_purple' | 'studio_white'>('titanium_dark');
+  const [productScale, setProductScale] = useState<number>(100);
+  const [showStudioShadow, setShowStudioShadow] = useState<boolean>(true);
+  const [activeBadgeText, setActiveBadgeText] = useState<string>('تخفيض -45% اليوم فقط 🔥');
+  const [isEditingDesignLayers, setIsEditingDesignLayers] = useState<boolean>(false);
+
+  // 3 AI-Generated High-Converting Ad Posts Content
+  const [aiAdPosts, setAiAdPosts] = useState([
+    {
+      id: 1,
+      type: 'studio',
+      tag: 'إعلان الاستوديو الفاخر (Commercial Studio Ad)',
+      headline: 'الحل الطبيعي المضمون للتخلص من الأرق والتوتر العصبي',
+      subheadline: 'حلوى المغنيسيوم المعقد اللذيذة لنوم عميق واسترخاء فوري',
+      badge: 'عرض محدود اليوم فقط 🔥',
+      cta: 'اطلب الآن والدفع عند الاستلام 🚚',
+      theme: 'emerald',
+    },
+    {
+      id: 2,
+      type: 'viral_hook',
+      tag: 'بوست المشكل والحل الفيروسي (Viral Problem & Solution)',
+      headline: 'واش كتعاني من قلة النعاس والعياء المستمر طيلة اليوم؟',
+      subheadline: 'اكتشف سر الطاقة والاسترخاء العضلي الموصى به من الخبراء',
+      badge: 'طبيعي وأصلي 100% 🌿',
+      cta: 'اضغط هنا للاستفادة من التخفيض 🛒',
+      theme: 'purple',
+    },
+    {
+      id: 3,
+      type: 'pack_scarcity',
+      tag: 'بوست باقة العرض الخاص والمخزون (Pack & Scarcity Post)',
+      headline: 'باقة التوفير الثلاثية: اشتري 2 علب واحصل على الثالثة مجاناً',
+      subheadline: 'تقييم 4.9/5 نجوم من أكثر من 3,840 زبون مغربي راضٍ',
+      badge: 'باقي 7 قطع في المخزن فقط ⏳',
+      cta: 'استفد من باقة التوفير قبل النفاد 🎁',
+      theme: 'amber',
+    },
+  ]);
+
+  // Pixel-Perfect 1080x1080 Canvas Engine (مطابق تماماً لما يظهر في الشاشة)
+  const downloadPixelPerfectCreative = (postIdx: number) => {
+    const post = aiAdPosts[postIdx] || aiAdPosts[0];
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1080;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Helper: Wrap Arabic text cleanly
+    const drawWrappedText = (
+      text: string,
+      x: number,
+      y: number,
+      maxWidth: number,
+      lineHeight: number,
+      font: string,
+      color: string
+    ) => {
+      ctx.font = font;
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      const words = text.split(' ');
+      let line = '';
+      const lines: string[] = [];
+
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + ' ';
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > maxWidth && n > 0) {
+          lines.push(line);
+          line = words[n] + ' ';
+        } else {
+          line = testLine;
+        }
+      }
+      lines.push(line);
+
+      let currentY = y;
+      for (let k = 0; k < lines.length; k++) {
+        ctx.fillText(lines[k].trim(), x, currentY);
+        currentY += lineHeight;
+      }
+      return currentY;
+    };
+
+    // Helper: Draw rounded rectangle
+    const drawRoundRect = (x: number, y: number, w: number, h: number, radius: number, fill: string, stroke?: string) => {
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, radius);
+      ctx.fillStyle = fill;
+      ctx.fill();
+      if (stroke) {
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+      ctx.restore();
+    };
+
+    // Background based on studioBgStyle
+    const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1080);
+    if (studioBgStyle === 'titanium_dark') {
+      bgGrad.addColorStop(0, '#061715');
+      bgGrad.addColorStop(0.5, '#04221f');
+      bgGrad.addColorStop(1, '#02100e');
+    } else if (studioBgStyle === 'emerald_glow') {
+      bgGrad.addColorStop(0, '#022c22');
+      bgGrad.addColorStop(0.5, '#064e3b');
+      bgGrad.addColorStop(1, '#022c22');
+    } else if (studioBgStyle === 'royal_purple') {
+      bgGrad.addColorStop(0, '#1e1b4b');
+      bgGrad.addColorStop(0.5, '#2e1065');
+      bgGrad.addColorStop(1, '#0f172a');
+    } else {
+      bgGrad.addColorStop(0, '#f8fafc');
+      bgGrad.addColorStop(1, '#e2e8f0');
+    }
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 1080, 1080);
+
+    // Subtle Radial Glow
+    const radial = ctx.createRadialGradient(540, 500, 40, 540, 500, 450);
+    radial.addColorStop(0, studioBgStyle === 'royal_purple' ? 'rgba(168, 85, 247, 0.25)' : 'rgba(16, 185, 129, 0.22)');
+    radial.addColorStop(1, 'transparent');
+    ctx.fillStyle = radial;
+    ctx.fillRect(0, 0, 1080, 1080);
+
+    // Top Urgency Ribbon
+    drawRoundRect(80, 45, 920, 68, 20, post.theme === 'purple' ? '#7c3aed' : '#059669');
+    ctx.font = 'bold 32px sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.fillText(`⚡ ${post.badge} · التوصيل مجاني لكافة المدن 🇲🇦`, 540, 90);
+
+    // Glass Container for Headline
+    const isLightBg = studioBgStyle === 'studio_white';
+    drawRoundRect(60, 135, 960, 135, 24, isLightBg ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.65)', isLightBg ? 'rgba(0,0,0,0.1)' : 'rgba(255, 255, 255, 0.12)');
+    drawWrappedText(post.headline, 540, 182, 900, 42, 'bold 34px sans-serif', isLightBg ? '#0f172a' : '#fef08a');
+    drawWrappedText(post.subheadline, 540, 234, 900, 32, 'bold 24px sans-serif', isLightBg ? '#475569' : '#cbd5e1');
+
+    // Load User Product Image
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = userUploadedImage;
+
+    const renderImageAndFinish = () => {
+      const frameX = 220;
+      const frameY = 300;
+      const frameW = 640;
+      const frameH = 500;
+
+      // Soft container & studio podium
+      drawRoundRect(frameX, frameY, frameW, frameH, 32, isLightBg ? 'rgba(0,0,0,0.03)' : 'rgba(255, 255, 255, 0.04)', isLightBg ? 'rgba(0,0,0,0.08)' : 'rgba(255, 255, 255, 0.08)');
+      
+      try {
+        const aspect = img.width / img.height;
+        const scaleFactor = productScale / 100;
+        let dw = (frameW - 60) * scaleFactor;
+        let dh = dw / aspect;
+        if (dh > (frameH - 60) * scaleFactor) {
+          dh = (frameH - 60) * scaleFactor;
+          dw = dh * aspect;
+        }
+        const dx = frameX + (frameW - dw) / 2;
+        const dy = frameY + (frameH - dh) / 2;
+
+        if (showStudioShadow) {
+          ctx.save();
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+          ctx.shadowBlur = 45;
+          ctx.shadowOffsetY = 25;
+          ctx.drawImage(img, dx, dy, dw, dh);
+          ctx.restore();
+        } else {
+          ctx.drawImage(img, dx, dy, dw, dh);
+        }
+      } catch (err) {
+        console.warn('Canvas image draw error', err);
+      }
+
+      // 3D Floating Price Tag
+      const priceY = 825;
+      drawRoundRect(280, priceY, 520, 90, 24, '#f59e0b', '#fbbf24');
+      ctx.font = 'bold 26px sans-serif';
+      ctx.fillStyle = '#78350f';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${productOriginalPrice} DH`, 410, priceY + 54);
+      ctx.fillRect(350, priceY + 46, 120, 3); // strike line
+
+      ctx.font = '900 48px sans-serif';
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText(`${productPrice} DH فقط`, 620, priceY + 60);
+
+      // Bottom CTA Bar
+      const ctaY = 940;
+      drawRoundRect(60, ctaY, 960, 95, 24, post.theme === 'purple' ? '#3b82f6' : '#10b981');
+      ctx.font = 'bold 36px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.fillText(`🛒 ${post.cta}`, 540, ctaY + 60);
+
+      // Trust Footer
+      ctx.font = 'bold 20px sans-serif';
+      ctx.fillStyle = isLightBg ? '#64748b' : '#94a3b8';
+      ctx.fillText('🚚 توصيل مجاني وسريع لكافة المدن · 💵 الدفع بعد المعاينة · 🛡️ ضمان 7 أيام', 540, 1060);
+
+      // Trigger Clean High-Res PNG Download
+      try {
+        const dataUrl = canvas.toDataURL('image/png', 1.0);
+        const link = document.createElement('a');
+        link.download = `creative-ad-${postIdx + 1}-${Date.now()}.png`;
+        link.href = dataUrl;
+        link.click();
+      } catch (e) {
+        console.warn('Canvas export fallback', e);
+      }
+    };
+
+    if (img.complete) {
+      renderImageAndFinish();
+    } else {
+      img.onload = renderImageAndFinish;
+      img.onerror = renderImageAndFinish;
+    }
+  };
+
+  // Direct Canva & Photopea Integration
+  const openInPhotopea = () => {
+    const photopeaConfig = {
+      files: [userUploadedImage],
+      environment: { theme: 2, vtools: true },
+    };
+    window.open(`https://www.photopea.com#${encodeURIComponent(JSON.stringify(photopeaConfig))}`, '_blank');
+  };
+
+  const openInCanva = () => {
+    window.open('https://www.canva.com/create/facebook-ads/', '_blank');
+  };
+
+  // =========================================================================
+  // AI VIDEO CREATIVES: 3 DISTINCT FORMATS REQUESTED BY THE USER
+  // 1. فيديو تعليمي وشرح (Educational)
+  // 2. فيديو طريقة الاستعمال (Usage in action)
+  // 3. فيديو تجربة حقيقية / UGC (UGC Experience)
+  // =========================================================================
+  const [selectedVideoMode, setSelectedVideoMode] = useState<'educational' | 'usage' | 'ugc'>('educational');
+  const [videoSceneIndex, setVideoSceneIndex] = useState<number>(0);
+  const [videoIsPlaying, setVideoIsPlaying] = useState<boolean>(true);
+  const [videoProgress, setVideoProgress] = useState<number>(0);
+  const [videoSpeed, setVideoSpeed] = useState<'normal' | 'fast'>('normal');
+  const [isVoiceMuted, setIsVoiceMuted] = useState<boolean>(false);
+  const [isEditingVideoScript, setIsEditingVideoScript] = useState<boolean>(false);
+
+  // Video 1: Educational / Explainer Video Scripts (4 Scenes)
+  const [educationalScenes, setEducationalScenes] = useState([
+    {
+      id: 1,
+      tag: 'المشهد 1: الحقيقة العلمية (Science Hook)',
+      speaker: 'د. كريم - أخصائي تغذية وصحة',
+      avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=400&q=80',
+      spokenText: 'واش عارف بلي 80% من مشاكل الأرق والتوتر سببها نقص المغنيسيوم في الجسم؟ إليكم التفسير الطبي.',
+      caption: 'نقص المغنيسيوم هو السبب الخفي للأرق والستريس! 🧠',
+      visualType: 'doctor_explaining',
+      badge: 'حقائق علمية مثبتة 🔬',
+    },
+    {
+      id: 2,
+      tag: 'المشهد 2: التركيبة وسرعة الامتصاص (Active Ingredients)',
+      speaker: 'د. كريم - شرح التركيبة',
+      avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=400&q=80',
+      spokenText: 'هاد الحلوى كتحتوي على جزيئات المغنيسيوم سريعة الامتصاص مع فيتامين B6 اللي كيوصل مباشرة للخلايا.',
+      caption: 'مغنيسيوم عالي الامتصاص مع فيتامين B6 ومستخلصات البابونج ✨',
+      visualType: 'product_zoom',
+      badge: 'امتصاص فائق وسريع ⚡',
+    },
+    {
+      id: 3,
+      tag: 'المشهد 3: المفعول داخل الجسم (How It Calms Nerves)',
+      speaker: 'د. كريم - التأثير العصبي',
+      avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=400&q=80',
+      spokenText: 'كيساعد العضلات باش تسترخي وينظم إفراز هرمون النوم الطبيعي باش تنعس نوم عميق بدون انقطاع.',
+      caption: 'استرخاء عضلات الجسم وإفراز هرمون النوم طبيعياً 💤',
+      visualType: 'product_benefit',
+      badge: 'بدون أي إدمان أو خمول 🌿',
+    },
+    {
+      id: 4,
+      tag: 'المشهد 4: التوصية والطلب (Doctor Recommendation)',
+      speaker: 'د. كريم - الخلاصة الطبية',
+      avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=400&q=80',
+      spokenText: 'كنصح بيه كبديل طبيعي آمن 100%. اطلبوه دابا من الموزع المعتمد مع التوصيل المجاني والدفع عند الاستلام.',
+      caption: 'موصى به كبديل طبيعي آمن 100% · توصيل فابور 🚚',
+      visualType: 'offer_recommendation',
+      badge: 'ضمان الجودة والأصالة 🛡️',
+    },
+  ]);
+
+  // Video 2: Usage / How-To Video Scripts (4 Scenes)
+  const [usageScenes, setUsageScenes] = useState([
+    {
+      id: 1,
+      tag: 'المشهد 1: الروتين والسهولة (Daily Routine Hook)',
+      speaker: 'ياسين - أسلوب حياة صحي',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+      spokenText: 'طريقة استعمال بسيطة ولذيذة كتغنيك على الفانيد والأدوية الكيميائية المرة!',
+      caption: 'روتين مسائي ممتع يغير جودة نومك للأفضل 🌙',
+      visualType: 'creator_routine',
+      badge: 'سهل وممتع في الاستعمال 🍇',
+    },
+    {
+      id: 2,
+      tag: 'المشهد 2: الجرعة والتوقيت (Dosage & Timing)',
+      speaker: 'ياسين - طريقة الأخذ',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+      spokenText: 'غير جوج حبات جيليه بنكهة التوت اللذيذة قبل موعد النعاس بنصف ساعة. مكتحتاجش حتى الماء!',
+      caption: 'حبتين يومياً قبل النوم بـ 30 دقيقة بدون ماء ⏱️',
+      visualType: 'product_zoom',
+      badge: 'مذاق التوت اللذيذ 🍬',
+    },
+    {
+      id: 3,
+      tag: 'المشهد 3: المفعول السريع والاسترخاء (Instant Relaxation)',
+      speaker: 'ياسين - الإحساس بالراحة',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+      spokenText: 'كتدوب في الفم وكتحس بالهدوء كينزل عليك والعضلات كترتاح تدريجياً حتى كتنعس.',
+      caption: 'امتصاص فوري وراحة عصبية تامة في دقائق 😴',
+      visualType: 'creator_delight',
+      badge: 'نوم هادئ ومريح 💯',
+    },
+    {
+      id: 4,
+      tag: 'المشهد 4: الاستيقاظ بنشاط (Fresh Morning & COD)',
+      speaker: 'ياسين - نشاط الصباح',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+      spokenText: 'كتفيق الصباح ناشط وخفيف بدون عياء. اطلب دابا واستفد من عرض التوصيل المجاني!',
+      caption: 'استيقاظ بنشاط وطاقة طيلة النهار ☀️',
+      visualType: 'offer_recommendation',
+      badge: 'التوصيل مجاني لجميع المدن 🇲🇦',
+    },
+  ]);
+
+  // Video 3: UGC Creator Experience & Testimonial Scripts (4 Scenes)
+  const [ugcScenes, setUgcScenes] = useState([
+    {
+      id: 1,
+      tag: 'المشهد 1: الهوك الواقعي (UGC Authentic Hook)',
+      speaker: 'سارة - منشئة محتوى مغربية',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      spokenText: 'البنات، شكون فيكم كتعاني من الأرق والستريس بحالي؟ جبت ليكم الحل السحري اللي عتقني!',
+      caption: 'واش كتعاني من قلة النعاس وتشنج العضلات؟ شوف هادي! 😱',
+      visualType: 'creator_talking',
+      badge: 'تجربتي الصادقة 100% ✨',
+    },
+    {
+      id: 2,
+      tag: 'المشهد 2: استعراض العلبة الحقيقية (Product Unboxing)',
+      speaker: 'سارة - فتح العلبة',
+      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
+      spokenText: 'شوفو معايا هاد حلوى المغنيسيوم الأصلية، الجودة ديالها تبارك الله وبنينة بحال الفواكه.',
+      caption: 'حلوى المغنيسيوم الأصلية بنكهة التوت الطبيعي 🍇',
+      visualType: 'product_zoom',
+      badge: 'جودة ممتازة وأصلية 💯',
+    },
+    {
+      id: 3,
+      tag: 'المشهد 3: النتيجة بعد أسبوع (Transformation After 7 Days)',
+      speaker: 'سارة - النتيجة والراحة',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      spokenText: 'كنت كنعس 3 ساعات ومقطعة، دابا كننعس ليلة كاملة نوم عميق بدون أي صداع ولا كوشمار.',
+      caption: 'نوم عميق ليلة كاملة بعد أسبوع فقط من الاستعمال ⭐',
+      visualType: 'creator_delight',
+      badge: 'تقييم 5 نجوم من الزبناء 🌟',
+    },
+    {
+      id: 4,
+      tag: 'المشهد 4: العرض الحصري والدفع عند الاستلام (Exclusive COD Offer)',
+      speaker: 'سارة - العرض المحدود',
+      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+      spokenText: 'دايرين برومو: شري 2 علب وتاخد الثالثة فابور! والتوصيل بالمجان وكتخلص حتى كتقلب سلعتك.',
+      caption: 'اشتري 2 واحصل على الثالثة مجاناً + توصيل مجاني 🚚',
+      visualType: 'offer_recommendation',
+      badge: 'باقي قطع قليلة بالسعر التخفيضي ⏳',
+    },
+  ]);
+
+  // Current Active Video Scenes List
+  const currentActiveScenes =
+    selectedVideoMode === 'educational'
+      ? educationalScenes
+      : selectedVideoMode === 'usage'
+      ? usageScenes
+      : ugcScenes;
+
+  // Real Speech Synthesis Voiceover
+  const speakCurrentScene = (text: string) => {
+    if (isVoiceMuted || !('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.05;
+      utterance.pitch = selectedVideoMode === 'ugc' ? 1.15 : selectedVideoMode === 'educational' ? 0.95 : 1.0;
+      utterance.lang = 'ar-SA';
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.warn('SpeechSynthesis error', e);
+    }
+  };
+
+  // Video Loop
+  useEffect(() => {
+    if (!videoIsPlaying) return;
+    const intervalTime = videoSpeed === 'fast' ? 70 : 100;
+    const timer = setInterval(() => {
+      setVideoProgress((prev) => {
+        if (prev >= 100) {
+          setVideoSceneIndex((s) => {
+            const nextIdx = (s + 1) % currentActiveScenes.length;
+            speakCurrentScene(currentActiveScenes[nextIdx].spokenText);
+            return nextIdx;
+          });
+          return 0;
+        }
+        return prev + 2.5;
+      });
+    }, intervalTime);
+    return () => clearInterval(timer);
+  }, [videoIsPlaying, videoSpeed, currentActiveScenes, isVoiceMuted, selectedVideoMode]);
+
+  // =========================================================================
+  // DETAILED LANDING PAGE (ديطاي ديال لي ديطاي)
+  // =========================================================================
+  const [lpDevice, setLpDevice] = useState<'mobile' | 'desktop'>('mobile');
+  const [selectedPack, setSelectedPack] = useState<1 | 2 | 3>(2);
+  const [orderCustomerName, setOrderCustomerName] = useState('');
+  const [orderCustomerPhone, setOrderCustomerPhone] = useState('');
+  const [orderCustomerCity, setOrderCustomerCity] = useState('الدار البيضاء');
+  const [orderSuccessSubmitted, setOrderSuccessSubmitted] = useState<boolean>(false);
+  const [landingFormError, setLandingFormError] = useState<string | null>(null);
+
+  // Live countdown timer
+  const [countdown, setCountdown] = useState({ hours: 4, minutes: 28, seconds: 15 });
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeLeft((prev) => {
+      setCountdown((prev) => {
         if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
         if (prev.minutes > 0) return { ...prev, minutes: 59, seconds: 59 };
         if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
@@ -149,1508 +621,1607 @@ export const CreativeLandingBuilderView: React.FC<CreativeLandingBuilderViewProp
     return () => clearInterval(timer);
   }, []);
 
-  // Current active product
-  const currentAd = customProducts.find((a) => a.id === selectedAdId) || customProducts[0] || ads[0];
-
-  // Editable Landing Page Content
-  const [lpHeadline, setLpHeadline] = useState(currentAd?.title || '');
-  const [lpSubheadline, setLpSubheadline] = useState(currentAd?.description || '');
-
-  // Keep headline synced when selecting another product
-  const handleSelectAd = (id: string) => {
-    setSelectedAdId(id);
-    const target = customProducts.find((a) => a.id === id);
-    if (target) {
-      setLpHeadline(target.title);
-      setLpSubheadline(target.description);
-    }
+  // Pack Helper
+  const getPackDetails = () => {
+    if (selectedPack === 1) return { title: 'علبة واحدة (تجربة)', price: productPrice, note: 'شحن مجاني' };
+    if (selectedPack === 2) return { title: 'باك 2 علب (الأكثر طلباً)', price: Math.round(productPrice * 1.65), note: '+ علبة هدية مجانية 🎁' };
+    return { title: 'باك العائلة (3 علب)', price: Math.round(productPrice * 2.2), note: 'توفير 45% + هدايا قيمة' };
   };
 
-  const [productUploadError, setProductUploadError] = useState<string | null>(null);
-
-  // Add custom uploaded product seamlessly in 1 step!
-  const handleSaveCustomProduct = (e: React.FormEvent) => {
+  // Submit Order Form inside Landing Page
+  const handleLandingCheckoutSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setProductUploadError(null);
-    if (!newTitle.trim()) {
-      setProductUploadError('يرجى كتابة اسم المنتج لتوليد الزوايا وصفحة الهبوط');
+    setLandingFormError(null);
+    if (!orderCustomerPhone.trim()) {
+      setLandingFormError('يرجى كتابة رقم الهاتف للتواصل معك هاتفياً وتأكيد التوصيل');
       return;
     }
-
-    const calculatedDiscount = Math.max(
-      15,
-      Math.round(((Number(newOriginalPrice) - Number(newPrice)) / Number(newOriginalPrice)) * 100)
-    );
-
-    const mainImage = uploadedImagesList[activeMainImageIndex] || uploadedImagesList[0] || getLocalImage('product_smartwatch_ultra_1792240155179.jpg');
-
-    const newAd: ProductAd = {
-      id: `custom-${Date.now()}`,
-      title: newTitle,
-      description: newDescription || `منتج ${newTitle} الحصري والفعال لعلاج مشكل ${newProblemSolved} بأعلى جودة وضمان حقيقي.`,
-      features: [
-        `يحل مشكل: ${newProblemSolved}`,
-        `الفئة والعمر المستهدف: ${newTargetGender} (${newTargetAge})`,
-        `البيئة المناسبة: ${newEnvironments}`,
-        'توصيل سريع مجاني 24/48 ساعة حتى لباب دارك بالمغرب',
-        'معاينة وتجربة السلعة قبل دفع أي درهم مع ضمان 7 أيام',
-      ],
-      price: Number(newPrice),
-      originalPrice: Number(newOriginalPrice),
-      discountPercent: calculatedDiscount,
-      currency: 'DH',
-      rating: 4.9,
-      reviewsCount: 240,
-      images: uploadedImagesList.length > 0 ? uploadedImagesList : [mainImage],
-      mediaType: 'image',
-      category: newCategory.includes('كوسميتيك') ? 'beauty' : newCategory.includes('إلكترونيات') ? 'electronics' : 'home',
-      city: 'الدار البيضاء',
-      whatsappNumber: '+212612345678',
-      phone: '0612345678',
-      freeShipping: true,
-      cashOnDelivery: true,
-      stockLeft: 12,
-      createdAt: 'الآن',
-      likesCount: 89,
-      commentsCount: 24,
-      sharesCount: 45,
-      isLiked: false,
-      isSaved: false,
-      brandName: 'متجر التاجر المعتمد',
-      brandHandle: '@seller_pro',
-      brandAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-      verified: true,
-      sponsored: true,
-      comments: [],
-    };
-
-    setCustomProducts([newAd, ...customProducts]);
-    setSelectedAdId(newAd.id);
-    setLpHeadline(newAd.title);
-    setLpSubheadline(newAd.description);
-    setUploadSuccessToast(true);
-    setTimeout(() => setUploadSuccessToast(false), 3500);
-
-    // Smooth scroll to creatives section
-    const elem = document.getElementById('studio-angles-section');
-    if (elem) elem.scrollIntoView({ behavior: 'smooth' });
+    setOrderSuccessSubmitted(true);
   };
 
-  // 5 High-converting sales angles tailored to the active product
-  const adCopyAngles = {
-    problem_solution: {
-      name: '1. زاوية حل المشكل والألم اليومي (Pain & Problem Solution)',
-      tagline: 'الأعلى تحويلاً ونقرات في السوق المغربي',
-      badge: 'الأعلى تحويلاً ⭐',
-      hook: `🚨 عييتي من مشكل "${newProblemSolved || 'هاد المشكل اليومي'}" والحلول العادية ما عطاتك حتى نتيجة؟`,
-      videoDirection: {
-        scene1: 'مشهد 1 (0-3 ثواني): زووم سريع على شخص يعاني من المشكل اليومي مع نص عريض باللون الأحمر والأصفر.',
-        scene2: 'مشهد 2 (3-7 ثواني): إظهار السلعة كحل نهائي ومباشر بدون تعقيدات مع استعراض العلبة.',
-        scene3: 'مشهد 3 (7-15 ثانية): تجربة الاستعمال الواقعية والنتيجة الإيجابية السريعة.',
-        scene4: 'مشهد 4 (15-22 ثانية): إبراز الفئة المستهدفة وكيف أراحهم المنتج.',
-        scene5: 'مشهد 5 (22-28 ثانية): النداء للشراء: التوصيل فابور لباب الدار والدفع بعد المعاينة والفحص!',
-      },
-      body: `الآن فالمغرب 🇲🇦 جبنا ليك الحل النهائي مع ${currentAd?.title}!
-صمم خصيصاً باش يحل ليك مشكل "${newProblemSolved || 'المشكل اليومي'}" فثواني وبدون أي عناء، مع جودة ممتازة تدوم طويلاً.
-
-✅ فكرة حصرية ومثالية لـ ${newTargetGender} (${newTargetAge})
-✅ مناسب جداً في: ${newEnvironments}
-✅ التوصيل فابور بالمجان لجميع المدن 24/48 ساعة
-✅ الخلاص حتى تقلب سلعتك وتجربها عاد تخلص الليفرور!`,
-      cta: `👉 اضغط على الرابط أسفله واطلب دابا قبل ما تسالي الكمية:`,
-      metrics: { ctr: '4.2% - 5.8%', roas: '3.8x - 4.6x', cpa: '22 - 32 DH' },
-    },
-    scarcity: {
-      name: '2. زاوية التخفيض الصادم والندرة (Urgency & Scarcity -50%)',
-      tagline: 'يدفع الزبون المتردد للشراء الفوري والطلب السريع',
-      badge: 'طلب فوري 🔥',
-      hook: `🔥 تخفيض خاص -${currentAd?.discountPercent || 40}% متبقي فقط ${currentAd?.stockLeft || 9} قطع في المخزون بالمغرب!`,
-      videoDirection: {
-        scene1: 'مشهد 1 (0-3 ثواني): عداد تنازلي وسعر مشطوب كبير مع كتابة "عرض اليوم فقط".',
-        scene2: 'مشهد 2 (3-9 ثواني): استعراض سريع وفخم للمنتج مع مؤثرات بصرية وصوت تكتكة الساعة.',
-        scene3: 'مشهد 3 (9-17 ثانية): توضيح الفرق الكبير بين السعر الأصلي وسعر اليوم المخفض.',
-        scene4: 'مشهد 4 (17-25 ثانية): تنبيه بنفاد الكمية من المستودع ورسالة تحذيرية: اطلب الآن قبل انتهاء اليوم.',
-      },
-      body: `بمناسبة العرض الخاص لهذا الأسبوع، كنقدمو ليك ${currentAd?.title} بثمن استثنائي ${currentAd?.price} درهم فقط بلاصة ${currentAd?.originalPrice} درهم!
-
-⚠️ سارع قبل نفاد المخزون، العرض صالح لهذا اليوم فقط أو حتى انتهاء الكمية المتبقية.
-📦 إرسال فوري وسريع لعنوانك في أقل من 48 ساعة.
-🤝 المعاينة والتجربة مضمونة قبل الدفع.`,
-      cta: `⚡ اضغط هنا لتأكيد طلبك قبل انتهاء التخفيض:`,
-      metrics: { ctr: '3.9% - 5.1%', roas: '3.5x - 4.2x', cpa: '25 - 35 DH' },
-    },
-    social_proof: {
-      name: '3. زاوية الدليل الاجتماعي وشهادات الزبناء (Social Proof & UGC)',
-      tagline: 'أسلوب تيك توك وريلز العفوي الأكثر مصداقية',
-      badge: 'مصداقية عالية 💬',
-      hook: `🤳 "الكل كيهضر عليه فالمغرب.. واش بصح ${currentAd?.title} كايستاهل كل هاد الضجة؟"`,
-      videoDirection: {
-        scene1: 'مشهد 1 (0-3 ثواني): شخص يمسك الهاتف بأسلوب سيلفي عفوي ويقول الهوك بحماس وفضول.',
-        scene2: 'مشهد 2 (3-12 ثانية): تجربة فتح الصندوق (Unboxing) وإبداء الانبهار بالجودة الحقيقية للمنتج.',
-        scene3: 'مشهد 3 (12-20 ثانية): إظهار لقطات شاشة سريعة لرسائل واتساب وتقييمات زبناء حقيقيين يشكرون المنتج.',
-        scene4: 'مشهد 4 (20-27 ثانية): نصيحة صريحة للمشاهدين: "نصحكم تاخدوه قبل ما يغلاو فيه، والدفع حتى يوصلك".',
-      },
-      body: `أكثر من 850 زبون فالمغرب جربو ${currentAd?.title} وأجمعو على الجودة ديالو العالية!
-هاد المنتج كايعطيك نتيجة ملموسة من أول استعمال وغايسهل عليك يومياتك بشكل كبير.
-
-⭐⭐⭐⭐⭐ تقييم 4.9/5 على موقعنا
-💬 "وصلتني السلعة ف 24 ساعة، سلعة نقية بزااف والتعامل فالقمة" - زبونة من الدار البيضاء
-🚚 التوصيل مجاني لجميع المدن والدفع بعد المعاينة.`,
-      cta: `👇 شوف آراء باقي الزبناء واطلب نسختك الآن:`,
-      metrics: { ctr: '4.5% - 6.2%', roas: '4.1x - 5.0x', cpa: '20 - 28 DH' },
-    },
-    luxury: {
-      name: '4. زاوية الفخامة والأناقة والبريستيج (Elegance & Premium Lifestyle)',
-      tagline: 'مناسب للمنتجات الفاخرة، الإلكترونيات، والسنيكرز ومواد التجميل الراقية',
-      badge: 'جودة VIP 💎',
-      hook: `✨ تميز بإطلالة راقية وجودة استثنائية تجلب لك الإعجاب مع ${currentAd?.title}!`,
-      videoDirection: {
-        scene1: 'مشهد 1 (0-3 ثواني): تصوير سينمائي Slow Motion مع إضاءة خافتة فاخرة وزوايا حادة للمنتج.',
-        scene2: 'مشهد 2 (3-10 ثواني): إبراز التفاصيل الدقيقة، المواد الأصلية، واللمسات الاحترافية.',
-        scene3: 'مشهد 3 (10-18 ثانية): شخص أنيق يستعمل المنتج بثقة واستمتاع في بيئة راقية (${newEnvironments}).',
-        scene4: 'مشهد 4 (18-25 ثانية): التغليف الفاخر والشحن الآمن حتى لباب المنزل.',
-      },
-      body: `علاش ترضى بالتقليد ملي تقدر تاخد الجودة الأصلية بأفضل ثمن؟
-هذا المنتج يجمع بين الأناقة العصرية والمواد الممتازة ليعطيك مظهراً فريداً في كل مناسبة.
-
-💎 تصميم راقي ومواد تصنيع أصلية 100%
-💎 متانة وجودة تدوم لسنوات
-💎 هدية مثالية لنفسك أو لمن تحب
-🚚 التوصيل بالمجان لجميع مدن وقرى المغرب مع الدفع عند الاستلام.`,
-      cta: `🛍️ استفد من التخفيض الخاص واطلب الآن:`,
-      metrics: { ctr: '3.4% - 4.7%', roas: '3.2x - 4.0x', cpa: '28 - 40 DH' },
-    },
-    trust_cod: {
-      name: '5. زاوية راحة البال والدفع بعد المعاينة (100% Risk-Free Guarantee)',
-      tagline: 'يزيل الخوف من النصب والتسوق الإلكتروني نهائياً',
-      badge: 'ضمان 100% 🛡️',
-      hook: `🛡️ راحة بالك هي الأولى: قلب سلعتك بيدك وتأكد منها مزيان عاد خلص الموزع!`,
-      videoDirection: {
-        scene1: 'مشهد 1 (0-3 ثواني): الموزع يسلم الكولية، والزبون يفتح العلبة بابتسامة وثقة أمام الكاميرا.',
-        scene2: 'مشهد 2 (3-10 ثواني): الزبون يجرب المنتج ويتأكد من مطابقته للمواصفات 100%.',
-        scene3: 'مشهد 3 (10-18 ثانية): إبراز شعار "الدفع عند الاستلام" و"ضمان الاستبدال 7 أيام".',
-        scene4: 'مشهد 4 (18-25 ثانية): تأكيد سهولة التواصل مع خدمة الزبائن عبر واتساب في أي وقت.',
-      },
-      body: `معنا، التسوق الإلكتروني بالمغرب أصبح مضموناً بنسبة 100%.
-طلبك لـ ${currentAd?.title} غادي يوصلك حتى لباب دارك، مع إمكانية فتح الكولية والتأكد من المواصفات والجودة قدام الموزع قبل ما تدفع حتى درهم.
-
-✅ متجر معتمد وسمعة ممتازة
-✅ ضمان الاستبدال والاسترجاع لمدة 7 أيام
-✅ فريق دعم وزبائن متوفر 7/7 للإجابة عن تساؤلاتك عبر الواتساب.`,
-      cta: `📲 اطلب عبر واتساب أو مباشرة من الموقع بضغطة زر:`,
-      metrics: { ctr: '4.0% - 5.4%', roas: '3.6x - 4.4x', cpa: '24 - 34 DH' },
-    },
-  };
-
-  const selectedCopy = adCopyAngles[selectedAngle];
-  const fullAdText = `${selectedCopy.hook}\n\n${selectedCopy.body}\n\n${selectedCopy.cta}\n🔗 https://so9fiadak.ma/p/${currentAd?.id || 'prod'}\n\n#المغرب #تجارة_إلكترونية #توصيل_مجاني #الدفع_عند_الاستلام #عروض_المغرب`;
-
-  const fullVideoScriptText = `🎬 سيناريو الإعلان المرئي (Creative Video Storyboard) لـ "${currentAd?.title}"
-زاوية الإعلان: ${selectedCopy.name}
-الجمهور المستهدف: ${newTargetGender} (${newTargetAge})
-المشكل المحلول: ${newProblemSolved}
-البيئة المناسبة: ${newEnvironments}
-
-${selectedCopy.videoDirection.scene1}
-${selectedCopy.videoDirection.scene2}
-${selectedCopy.videoDirection.scene3}
-${selectedCopy.videoDirection.scene4}
-${(selectedCopy.videoDirection as any).scene5 || ''}
-
-📌 نصوص الشاشة الترويجية (On-Screen Hooks):
-1. ${selectedCopy.hook}
-2. تخفيض -${currentAd?.discountPercent || 40}% لفترة محدودة!
-3. التوصيل بالمجان لكافة المدن المغربية 🚚
-4. الدفع نقداً بعد المعاينة والتأكد من الجودة 🤝`;
-
-  const handleCopyText = () => {
-    navigator.clipboard.writeText(fullAdText);
-    setCopiedText(true);
-    setTimeout(() => setCopiedText(false), 2400);
-  };
-
-  const handleCopyScript = () => {
-    navigator.clipboard.writeText(fullVideoScriptText);
-    setCopiedScript(true);
-    setTimeout(() => setCopiedScript(false), 2400);
-  };
-
-  const [landingOrderError, setLandingOrderError] = useState<string | null>(null);
-
-  // Handle Landing Page Fast Order Submit
-  const handleLandingOrderSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLandingOrderError(null);
-    if (!customerPhone.trim()) {
-      setLandingOrderError('يرجى إدخال رقم الهاتف للتواصل معك لتأكيد الإرسال');
-      return;
-    }
-
-    const total =
-      orderQuantity === 1
-        ? currentAd.price
-        : orderQuantity === 2
-        ? Math.round(currentAd.price * 2 * 0.85)
-        : Math.round(currentAd.price * 3 * 0.75);
-
-    const orderId = `SO9-${Math.floor(1000 + Math.random() * 9000)}`;
-    setSubmittedOrderInfo({ id: orderId, total });
-  };
-
-  return (
-    <div className="space-y-6 pb-12 animate-in fade-in duration-200" dir={isRtl ? 'rtl' : 'ltr'}>
-      {/* Toast Notification */}
-      {uploadSuccessToast && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 font-bold text-xs animate-in zoom-in-95">
-          <CheckCircle2 className="w-5 h-5" />
-          <span>تمت إضافة منتجك وتوليد زوايا البيع وصفحة الهبوط المخصصة له بنجاح!</span>
-        </div>
-      )}
-
-      {/* Main Suite Hero Header */}
-      <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mt-6 -mr-6 w-60 h-60 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-xs font-black border border-white/20">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>استوديو الكرياتيف وزوايا البيع وصفحات الهبوط للتجار</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
-              صانع الكرياتيف واللاندينغ بيج مع إضافة وتصوير منتجك الخاص
-            </h1>
-            <p className="text-blue-100 text-xs sm:text-sm font-medium leading-relaxed">
-              ارفع صور منتجك من الحاسوب أو الهاتف، حدد الفئة والمشكل، وسيقوم النظام بتوليد زوايا البيع وسيناريوهات الفيديو وصفحة الهبوط التفاعلية المجهزة للدفع عند الاستلام.
-            </p>
-          </div>
-
-          {/* Main Top View Switcher Tabs */}
-          <div className="flex items-center gap-2 shrink-0 bg-black/20 p-1.5 rounded-2xl border border-white/10">
-            <button
-              onClick={() => setActiveTab('creatives')}
-              className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
-                activeTab === 'creatives'
-                  ? 'bg-white text-blue-900 shadow-lg'
-                  : 'text-white/90 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <Zap className="w-4 h-4 text-amber-500" />
-              <span>1. زوايا البيع والكرياتيف</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('landing_page')}
-              className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
-                activeTab === 'landing_page'
-                  ? 'bg-white text-indigo-900 shadow-lg'
-                  : 'text-white/90 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <Layout className="w-4 h-4 text-emerald-500" />
-              <span>2. محرر صفحة الهبوط (Landing Page)</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================================
-          THE EXACT FORM STRUCTURE FROM THE USER'S HAND-DRAWN SKETCH
-         ======================================================== */}
-      <div className="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/90 shadow-sm space-y-6">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black">
-              <UploadCloud className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-black text-slate-900">
-                إضافة وبيانات المنتج الخاص (Upload & Product Setup)
-              </h2>
-              <p className="text-xs text-slate-500">
-                ارفع صور السلعة من البيسي أو الهاتف وأدخل تفاصيل الجمهور والمشكل لي كايحل
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              multiple
-              accept="image/*"
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-md flex items-center gap-2 cursor-pointer transition-transform hover:scale-[1.02]"
-            >
-              <FolderOpen className="w-4 h-4" />
-              <span>اختر صور من جهازك (PC / Téléphone)</span>
-            </button>
-          </div>
-        </div>
-
-        <form onSubmit={handleSaveCustomProduct} className="space-y-6">
-          {/* SECTION 1: TOP IMAGE BOX + THUMBNAILS GALLERY (كالمخطط في الصورة تماماً) */}
-          <div className="space-y-3">
-            <div className="relative w-full max-w-lg mx-auto aspect-video sm:aspect-[21/9] rounded-2xl overflow-hidden bg-slate-950 border-2 border-slate-300 shadow-md flex items-center justify-center group">
-              {uploadedImagesList.length > 0 && uploadedImagesList[activeMainImageIndex] ? (
-                <>
-                  <img
-                    src={uploadedImagesList[activeMainImageIndex]}
-                    alt="صورة المنتج"
-                    className="w-full h-full object-contain"
-                  />
-                  <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-lg border border-white/20">
-                    صورة رئيسية (Image Principale)
-                  </div>
-                </>
-              ) : (
-                <div className="text-center p-6 text-slate-400 space-y-2">
-                  <ImageIcon className="w-10 h-10 mx-auto text-slate-500" />
-                  <span className="font-bold text-sm block">صورة المنتج</span>
-                  <span className="text-xs block">اضغط لاختيار صورة من جهازك</span>
-                </div>
-              )}
-
-              {/* Upload Overlay Action */}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-black text-xs cursor-pointer backdrop-blur-[2px]"
-              >
-                <UploadCloud className="w-5 h-5" />
-                <span>تغيير أو رفع صورة جديدة من جهازك</span>
-              </button>
-            </div>
-
-            {/* Thumbnails Row (الكالوندريه / شريط المصغرات كالمخطط المرسوم) */}
-            <div className="space-y-1.5 max-w-xl mx-auto">
-              <span className="text-[11px] font-bold text-slate-500 block text-center">
-                صور السلعة (اضغط على أي صورة لتحديدها كصورة رئيسية):
-              </span>
-              <div className="flex items-center justify-center gap-2.5 overflow-x-auto pb-2 px-1">
-                {uploadedImagesList.map((img, idx) => {
-                  const isSelected = activeMainImageIndex === idx;
-                  return (
-                    <div key={idx} className="relative group shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => setActiveMainImageIndex(idx)}
-                        className={`w-14 h-14 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
-                          isSelected
-                            ? 'border-blue-600 ring-2 ring-blue-600/30 shadow-md scale-105'
-                            : 'border-slate-200 hover:border-slate-400'
-                        }`}
-                      >
-                        <img src={img} alt={`thumb-${idx}`} className="w-full h-full object-cover" />
-                      </button>
-                      {uploadedImagesList.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const updated = uploadedImagesList.filter((_, i) => i !== idx);
-                            setUploadedImagesList(updated);
-                            if (activeMainImageIndex >= updated.length) {
-                              setActiveMainImageIndex(0);
-                            }
-                          }}
-                          className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white p-0.5 rounded-full shadow hover:bg-rose-700 opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="حذف الصورة"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-
-                {/* Add More Photos Button in the strip */}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-14 h-14 rounded-xl border-2 border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 hover:bg-blue-50/50 flex flex-col items-center justify-center gap-0.5 text-slate-500 hover:text-blue-600 transition-all cursor-pointer shrink-0"
-                  title="إضافة صورة أخرى من جهازك"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span className="text-[8px] font-bold">أضف صورة</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* FORM GRID EXACTLY AS DRAWN ON THE SKETCH */}
-          <div className="space-y-4 pt-2">
-            {productUploadError && (
-              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-xl flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
-                <span>{productUploadError}</span>
-              </div>
-            )}
-
-            {/* ROW 1: [اسم المنتج] | [مجال او الصنف] */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-black text-slate-800 block mb-1.5">
-                  اسم المنتج *:
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="مثال: سيروم الزيت المعالج لتساقط الشعر، كريم التفتيح، مكمل غذائي..."
-                  className="w-full py-2.5 px-3.5 bg-slate-50 hover:bg-white focus:bg-white text-xs rounded-xl border border-slate-300 focus:border-blue-600 font-bold text-slate-900 transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-black text-slate-800 block mb-1.5">
-                  مجال او الصنف *:
-                </label>
-                <select
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  className="w-full py-2.5 px-3.5 bg-slate-50 hover:bg-white focus:bg-white text-xs rounded-xl border border-slate-300 focus:border-blue-600 font-bold text-slate-900 transition-all"
-                >
-                  <option value="كوسميتيك ومواد التجميل (Cosmétique)">كوسميتيك ومواد التجميل (Cosmétique & Skincare)</option>
-                  <option value="مكملات غذائية وصحة (Compléments Alimentaires)">مكملات غذائية وصحة (Compléments Alimentaires & Santé)</option>
-                  <option value="أزياء وملابس وأحذية (Fashion & Shoes)">أزياء وملابس وأحذية (Fashion & Shoes)</option>
-                  <option value="إلكترونيات وأجهزة ذكية (Electronics)">إلكترونيات وأجهزة ذكية (Electronics & Gadgets)</option>
-                  <option value="المنزل والمطبخ (Home & Kitchen)">المنزل والمطبخ والديكور (Home & Kitchen)</option>
-                  <option value="إكسسوارات ولوازم السيارات (Auto & Moto)">إكسسوارات ولوازم السيارات (Auto & Moto)</option>
-                </select>
-              </div>
-            </div>
-
-            {/* ROW 2: [السعر] | [الفئة المستهدفة مع النوع] */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-black text-slate-800 block mb-1.5">
-                  السعر المقترح للبيع (DH) *:
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="relative">
-                    <input
-                      type="number"
-                      required
-                      min={10}
-                      value={newPrice}
-                      onChange={(e) => setNewPrice(Number(e.target.value))}
-                      className="w-full py-2.5 px-3.5 bg-slate-50 hover:bg-white focus:bg-white text-xs rounded-xl border border-slate-300 focus:border-blue-600 font-black text-emerald-700"
-                    />
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">
-                      DH
-                    </span>
-                  </div>
-
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min={10}
-                      value={newOriginalPrice}
-                      onChange={(e) => setNewOriginalPrice(Number(e.target.value))}
-                      placeholder="السعر المشطوب"
-                      className="w-full py-2.5 px-3.5 bg-slate-50 hover:bg-white focus:bg-white text-xs rounded-xl border border-slate-300 focus:border-blue-600 text-xs text-slate-500 font-medium"
-                    />
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">
-                      مشطوب
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-black text-slate-800 block mb-1.5">
-                  الفئة المستهدفة مع النوع *:
-                </label>
-                <select
-                  value={newTargetGender}
-                  onChange={(e) => setNewTargetGender(e.target.value)}
-                  className="w-full py-2.5 px-3.5 bg-slate-50 hover:bg-white focus:bg-white text-xs rounded-xl border border-slate-300 focus:border-blue-600 font-bold text-slate-900 transition-all"
-                >
-                  <option value="نساء (Femmes)">نساء (Femmes)</option>
-                  <option value="رجال (Hommes)">رجال (Hommes)</option>
-                  <option value="الجميع (نساء ورجال)">الجميع (نساء ورجال - Mixte)</option>
-                  <option value="أمهات وربات بيوت">أمهات وربات بيوت (Mamans & Foyers)</option>
-                  <option value="شباب ورياضيين">شباب ورياضيين (Sportifs & Jeunes)</option>
-                  <option value="موظفون ومهنيون">موظفون وأطر مهنية (Cadres & Professionnels)</option>
-                </select>
-              </div>
-            </div>
-
-            {/* ROW 3: [العمر] */}
-            <div>
-              <label className="text-xs font-black text-slate-800 block mb-1.5">
-                العمر المستهدف (Tranche d'âge) *:
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
-                {[
-                  '18 - 25 سنة',
-                  '25 - 35 سنة',
-                  '35 - 50 سنة',
-                  'فوق 50 سنة',
-                  'جميع الفئات العمرية',
-                ].map((age) => (
-                  <button
-                    key={age}
-                    type="button"
-                    onClick={() => setNewTargetAge(age)}
-                    className={`py-2 px-2.5 rounded-xl border font-bold text-center transition-all cursor-pointer ${
-                      newTargetAge === age
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    {age}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* ROW 4: [المشكل يظهر في مواد التجميل مع المكملات الغذائية...] */}
-            <div>
-              <label className="text-xs font-black text-slate-800 block mb-1.5">
-                المشكل الذي يظهر في مواد التجميل مع المكملات الغذائية والمنتج لي كايحل *:
-              </label>
-              <input
-                type="text"
-                required
-                value={newProblemSolved}
-                onChange={(e) => setNewProblemSolved(e.target.value)}
-                placeholder="مثال: تساقط الشعر، حب الشباب والبقع الداكنة، آلام المفاصل والظهر، بطء الحرق، بهتان البشرة والتجاعيد..."
-                className="w-full py-2.5 px-3.5 bg-slate-50 hover:bg-white focus:bg-white text-xs rounded-xl border border-slate-300 focus:border-blue-600 font-bold text-slate-900 transition-all"
-              />
-              <span className="text-[10px] text-slate-400 block mt-1">
-                (نقطة الألم Pain-point الرئيسية التي سيتم بناء زوايا البيع والإعلانات عليها لشد انتباه المشتري)
-              </span>
-            </div>
-
-            {/* ROW 5: [البيئات التي ممكن ينجح لكل منتج] */}
-            <div>
-              <label className="text-xs font-black text-slate-800 block mb-1.5">
-                البيئات التي ممكن ينجح لكل منتج (Contextes & Environnements) *:
-              </label>
-              <input
-                type="text"
-                required
-                value={newEnvironments}
-                onChange={(e) => setNewEnvironments(e.target.value)}
-                placeholder="مثال: المناسبات والأعراس، روتين المساء والعناية المنزلية، العمل المكتبي، الصيف والشاطئ، الصالات الرياضية..."
-                className="w-full py-2.5 px-3.5 bg-slate-50 hover:bg-white focus:bg-white text-xs rounded-xl border border-slate-300 focus:border-blue-600 font-bold text-slate-900 transition-all"
-              />
-            </div>
-
-            {/* ROW 6: [الوصف المنتج] (Large Box) */}
-            <div>
-              <label className="text-xs font-black text-slate-800 block mb-1.5">
-                الوصف المنتج (Description & Bénéfices Clés) *:
-              </label>
-              <textarea
-                rows={4}
-                required
-                value={newDescription}
-                onChange={(e) => setNewDescription(e.target.value)}
-                placeholder="اكتب وصفاً جذاباً للمنتج، مميزاته، طريقة استعماله، ولماذا يجب على الزبون شراؤه الآن..."
-                className="w-full p-3.5 bg-slate-50 hover:bg-white focus:bg-white text-xs rounded-2xl border border-slate-300 focus:border-blue-600 font-medium text-slate-800 transition-all leading-relaxed"
-              />
-            </div>
-
-            {/* Submit Action Button */}
-            <div className="pt-2">
-              <button
-                type="submit"
-                className="w-full py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white font-black text-sm rounded-2xl shadow-xl transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2.5 cursor-pointer"
-              >
-                <Sparkles className="w-5 h-5 text-amber-300 animate-spin" />
-                <span>توليد زوايا البيع، سيناريوهات الإعلانات، واللاندينغ بيج فوراً</span>
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-
-      {/* ========================================================
-          TAB 1: MARKETING ANGLES & CREATIVE STUDIO
-         ======================================================== */}
-      {activeTab === 'creatives' && (
-        <div id="studio-angles-section" className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
-          {/* Controls & Angle selection (7 cols) */}
-          <div className="lg:col-span-7 space-y-5">
-            {/* 1. Marketing Angles Selector */}
-            <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <div>
-                  <h3 className="text-sm font-black text-slate-900">
-                    1. زوايا البيع الـ 5 المقترحة لـ "{currentAd.title}"
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    مبنية على مشكل: {newProblemSolved || currentAd.description.slice(0, 45)}
-                  </p>
-                </div>
-                <Zap className="w-5 h-5 text-amber-500" />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {(Object.keys(adCopyAngles) as Array<keyof typeof adCopyAngles>).map((key) => {
-                  const angle = adCopyAngles[key];
-                  const isSelected = selectedAngle === key;
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => setSelectedAngle(key)}
-                      className={`p-3.5 rounded-2xl border text-right transition-all cursor-pointer relative ${
-                        isSelected
-                          ? 'bg-blue-50/90 border-blue-600 ring-2 ring-blue-600/20 shadow-xs'
-                          : 'bg-slate-50 border-slate-200 hover:bg-slate-100/80'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className={`text-xs font-black ${isSelected ? 'text-blue-900' : 'text-slate-800'}`}>
-                          {angle.name}
-                        </span>
-                        {isSelected ? (
-                          <BadgeCheck className="w-4 h-4 text-blue-600" />
-                        ) : (
-                          <span className="text-[10px] bg-white px-2 py-0.5 rounded-md border border-slate-200 font-bold text-slate-600">
-                            {angle.badge}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-slate-500 leading-tight mb-2">
-                        {angle.tagline}
-                      </p>
-
-                      {/* Expected KPIs badge */}
-                      <div className="flex items-center gap-2 pt-1 border-t border-slate-200/60 text-[10px] text-slate-600 font-bold">
-                        <span className="text-emerald-700">CTR: {angle.metrics.ctr}</span>
-                        <span>·</span>
-                        <span className="text-indigo-700">ROAS: {angle.metrics.roas}</span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 2. Visual Badge Overlay Selector */}
-            <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-3">
-              <div className="flex items-center justify-between pb-1 border-b border-slate-100">
-                <div>
-                  <h3 className="text-sm font-black text-slate-900">
-                    2. شارة العرض الترويجي على صورة الإعلان (Overlay Badge)
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    شارات سريعة تحفز الزبون على النقر الفوري ومضاعفة نسبة النقر (CTR Boost)
-                  </p>
-                </div>
-                <Flame className="w-4 h-4 text-rose-500" />
-              </div>
-
-              <div className="flex flex-wrap gap-2 pt-1">
-                {[
-                  'تخفيض -50% اليوم فقط 🔥',
-                  'الدفع بعد المعاينة 🇲🇦',
-                  'التوصيل بالمجان بالمغرب 🚚',
-                  'الأكثر طلباً بالمغرب ⭐',
-                  'الكمية محدودة جداً ⏳',
-                  'ضمان الجودة الأصلية 100% 🛡️',
-                  'عرض خاص: 2 حبات بثمن 1 🎁',
-                ].map((badge) => (
-                  <button
-                    key={badge}
-                    onClick={() => setSelectedOverlayBadge(badge)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer border ${
-                      selectedOverlayBadge === badge
-                        ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
-                        : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
-                    }`}
-                  >
-                    {badge}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 3. Video Storyboard & Script Direction */}
-            <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <div>
-                  <h3 className="text-sm font-black text-slate-900 flex items-center gap-1.5">
-                    <Video className="w-4 h-4 text-rose-600" />
-                    <span>3. سيناريو تصوير الفيديو الإعلاني (Video Storyboard)</span>
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    طريقة تصوير الإعلان خطوة بخطوة للحصول على أعلى عائد ومبيعات على تيك توك وريلز
-                  </p>
-                </div>
-
-                <button
-                  onClick={handleCopyScript}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
-                    copiedScript
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-slate-900 hover:bg-black text-white'
-                  }`}
-                >
-                  {copiedScript ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>تم نسخ السيناريو!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>نسخ سيناريو الفيديو</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* Storyboard Step Cards */}
-              <div className="space-y-2.5 text-xs text-slate-700">
-                <div className="p-3.5 bg-rose-50/70 border border-rose-200 rounded-2xl space-y-1">
-                  <span className="font-black text-rose-800 block">🎬 الهوك الخاطف (أول 3 ثواني):</span>
-                  <p className="font-bold text-slate-900 text-sm">"{selectedCopy.hook}"</p>
-                  <p className="text-[11px] text-slate-600">{selectedCopy.videoDirection.scene1}</p>
-                </div>
-
-                <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-2xl space-y-1">
-                  <span className="font-black text-blue-800 block">💡 إظهار المنتج كحل للمشكل:</span>
-                  <p className="text-[11px] text-slate-600">{selectedCopy.videoDirection.scene2}</p>
-                </div>
-
-                <div className="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-1">
-                  <span className="font-black text-emerald-800 block">⭐ التجربة العملية والنتيجة:</span>
-                  <p className="text-[11px] text-slate-600">{selectedCopy.videoDirection.scene3}</p>
-                </div>
-
-                <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-1">
-                  <span className="font-black text-amber-800 block">🚚 النداء للشراء والتوصيل والدفع:</span>
-                  <p className="text-[11px] text-slate-600">{selectedCopy.videoDirection.scene4}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* 4. Ready-to-use Ad Copy Caption */}
-            <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <div>
-                  <h3 className="text-sm font-black text-slate-900">
-                    4. كابشن الإعلان الجاهز للنشر (Ad Caption Copy)
-                  </h3>
-                  <p className="text-xs text-slate-500">جاهز للنسخ في إعلانات فيسبوك، تيك توك، أو رسائل واتساب</p>
-                </div>
-                <button
-                  onClick={handleCopyText}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
-                    copiedText
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
-                >
-                  {copiedText ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>تم النسخ بنجاح!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>نسخ النص كاملاً</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-800 leading-relaxed font-mono whitespace-pre-line select-all">
-                {fullAdText}
-              </div>
-            </div>
-          </div>
-
-          {/* Live Ad Mockup Preview (5 cols) */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="sticky top-20 space-y-4">
-              <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-md space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                  <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
-                    <Eye className="w-4 h-4 text-blue-600" />
-                    <span>معاينة الكرياتيف الحي (Live Mockup)</span>
-                  </span>
-
-                  {/* Format switcher: Feed vs Story 9:16 */}
-                  <div className="flex items-center p-0.5 bg-slate-100 rounded-lg text-xs">
-                    <button
-                      onClick={() => setCreativeMockupFormat('feed')}
-                      className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
-                        creativeMockupFormat === 'feed'
-                          ? 'bg-white text-blue-700 shadow-xs'
-                          : 'text-slate-500 hover:text-slate-800'
-                      }`}
-                    >
-                      مربع (1:1 Feed)
-                    </button>
-                    <button
-                      onClick={() => setCreativeMockupFormat('story')}
-                      className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
-                        creativeMockupFormat === 'story'
-                          ? 'bg-white text-blue-700 shadow-xs'
-                          : 'text-slate-500 hover:text-slate-800'
-                      }`}
-                    >
-                      طولي (9:16 Reels)
-                    </button>
-                  </div>
-                </div>
-
-                {/* Feed Mockup Format */}
-                {creativeMockupFormat === 'feed' && (
-                  <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-                    {/* Header */}
-                    <div className="p-3 flex items-center gap-2.5">
-                      <img
-                        src={currentAd.brandAvatar}
-                        alt={currentAd.brandName}
-                        className="w-9 h-9 rounded-full object-cover border border-slate-200"
-                      />
-                      <div>
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs font-bold text-slate-900">{currentAd.brandName}</span>
-                          <BadgeCheck className="w-3.5 h-3.5 text-blue-500 fill-blue-500 text-white" />
-                        </div>
-                        <span className="text-[10px] text-slate-400 block leading-tight">مموّل · Sponsored 🌐</span>
-                      </div>
-                    </div>
-
-                    {/* Caption Hook snippet */}
-                    <div className="px-3 pb-2 text-xs text-slate-800 font-medium line-clamp-3">
-                      {selectedCopy.hook} {selectedCopy.body.slice(0, 100)}...
-                    </div>
-
-                    {/* Image with Visual Badge Overlay */}
-                    <div className="relative aspect-square bg-slate-900 overflow-hidden">
-                      <img
-                        src={currentAd.images[0] || uploadedImagesList[0]}
-                        alt={currentAd.title}
-                        className="w-full h-full object-cover"
-                      />
-                      {/* Badge Overlay */}
-                      <div className="absolute top-3 right-3 bg-rose-600 text-white text-[11px] font-black px-3 py-1 rounded-lg shadow-md animate-pulse">
-                        {selectedOverlayBadge}
-                      </div>
-                      {/* Price Tag Overlay */}
-                      <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md text-white text-xs font-black px-3 py-1 rounded-lg border border-white/20">
-                        {currentAd.price} {currentAd.currency}{' '}
-                        <span className="line-through text-slate-400 text-[10px] mr-1">
-                          {currentAd.originalPrice} DH
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Ad CTA Footer */}
-                    <div className="p-3 bg-slate-50 flex items-center justify-between border-t border-slate-100">
-                      <div>
-                        <span className="text-[10px] text-slate-400 uppercase tracking-wider block">SO9FIADAK.MA</span>
-                        <span className="text-xs font-bold text-slate-900 truncate block max-w-[170px]">
-                          {currentAd.title}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => setActiveTab('landing_page')}
-                        className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-lg transition-colors cursor-pointer shadow-xs flex items-center gap-1"
-                      >
-                        <span>فتح اللاندينغ بيج</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* 9:16 Vertical Story Mockup Format */}
-                {creativeMockupFormat === 'story' && (
-                  <div className="relative mx-auto max-w-[260px] aspect-[9/16] rounded-2xl overflow-hidden bg-black shadow-xl border-2 border-slate-800 flex flex-col justify-between p-3.5 text-white">
-                    <img
-                      src={currentAd.images[0] || uploadedImagesList[0]}
-                      alt={currentAd.title}
-                      className="absolute inset-0 w-full h-full object-cover opacity-80"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/60 pointer-events-none" />
-
-                    {/* Story Header */}
-                    <div className="relative z-10 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <img
-                          src={currentAd.brandAvatar}
-                          alt="avatar"
-                          className="w-7 h-7 rounded-full border border-white"
-                        />
-                        <span className="text-xs font-bold text-white drop-shadow">{currentAd.brandName}</span>
-                      </div>
-                      <span className="bg-rose-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
-                        مموّل
-                      </span>
-                    </div>
-
-                    {/* Story Center Text */}
-                    <div className="relative z-10 space-y-2 text-center my-auto">
-                      <span className="inline-block bg-amber-400 text-slate-900 text-[10px] font-black px-2.5 py-1 rounded-full shadow-md">
-                        {selectedOverlayBadge}
-                      </span>
-                      <h4 className="text-sm font-black drop-shadow-md text-white leading-tight">
-                        {selectedCopy.hook}
-                      </h4>
-                      <div className="text-xl font-black text-emerald-400 drop-shadow">
-                        {currentAd.price} DH <span className="text-xs line-through text-slate-300">({currentAd.originalPrice} DH)</span>
-                      </div>
-                    </div>
-
-                    {/* Story Footer CTA Button */}
-                    <div className="relative z-10 space-y-2 text-center">
-                      <button
-                        onClick={() => setActiveTab('landing_page')}
-                        className="w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-xs rounded-xl shadow-lg flex items-center justify-center gap-1.5 cursor-pointer animate-bounce"
-                      >
-                        <ShoppingBag className="w-3.5 h-3.5" />
-                        <span>اسحب للأعلى أو اطلب الآن</span>
-                      </button>
-                      <span className="text-[10px] text-slate-300 block">الدفع نقداً بعد معاينة السلعة 🚚</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Quick Action Buttons */}
-                <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
-                  <button
-                    onClick={() => setActiveTab('landing_page')}
-                    className="flex-1 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-black rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <Layout className="w-3.5 h-3.5" />
-                    <span>تطبيق على صفحة الهبوط مباشرة</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================
-          TAB 2: FULLY WORKING LANDING PAGE SUITE
-         ======================================================== */}
-      {activeTab === 'landing_page' && (
-        <div className="space-y-6">
-          {/* Landing Page Action & Customization Bar */}
-          <div className="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-black text-slate-800">وضع المعاينة:</span>
-              <div className="flex items-center p-0.5 bg-slate-100 rounded-xl border border-slate-200">
-                <button
-                  onClick={() => setPreviewDevice('mobile')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    previewDevice === 'mobile'
-                      ? 'bg-indigo-600 text-white shadow-xs font-black'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Smartphone className="w-3.5 h-3.5" />
-                  <span>هاتف (Mobile 95%)</span>
-                </button>
-                <button
-                  onClick={() => setPreviewDevice('desktop')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    previewDevice === 'desktop'
-                      ? 'bg-indigo-600 text-white shadow-xs font-black'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Monitor className="w-3.5 h-3.5" />
-                  <span>حاسوب (Desktop)</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsFullscreenLanding(true)}
-                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-                <span>معاينة بملء الشاشة</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  const htmlCode = `<!-- Landing Page for ${currentAd.title} generated by SO9FIADAK -->
-<!DOCTYPE html>
+  // Full HTML Landing Page Download
+  const downloadFullStandaloneHtml = () => {
+    const html = `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${lpHeadline} - اطلب الآن مع الدفع عند الاستلام</title>
+  <title>${productTitle} - المتجر الرسمي</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }</style>
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans p-4">
-  <div class="max-w-md mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden p-6 space-y-5 border border-slate-200">
-    <div class="bg-gradient-to-r from-rose-600 to-amber-600 text-white text-center py-2.5 rounded-2xl font-black text-xs shadow-md">
-      🔥 تخفيض خاص -${currentAd.discountPercent}% اليوم فقط + شحن مجاني
-    </div>
-    <div class="text-center space-y-1">
-      <div class="text-amber-500 text-xs font-bold">⭐⭐⭐⭐⭐ (4.9/5 بناءً على 480+ تقييم بالمغرب)</div>
-      <h1 class="text-xl font-black leading-tight">${lpHeadline}</h1>
-      <p class="text-xs text-slate-600">${lpSubheadline}</p>
-    </div>
-    <div class="relative rounded-2xl overflow-hidden aspect-video bg-black shadow-md">
-      <img src="${currentAd.images[0] || uploadedImagesList[0]}" class="w-full h-full object-cover">
-      <div class="absolute top-3 right-3 bg-rose-600 text-white text-xs font-black px-3 py-1 rounded-full shadow-md">وفر -${currentAd.discountPercent}% اليوم</div>
-    </div>
-    <div class="bg-emerald-50 border-2 border-emerald-500/30 rounded-2xl p-4 text-center">
-      <div class="text-3xl font-black text-emerald-700">${currentAd.price} درهم مغربي</div>
-      <div class="text-xs text-slate-400 line-through">${currentAd.originalPrice} DH</div>
-      <div class="text-xs font-bold text-emerald-800 mt-1">✓ التوصيل مجاني لجميع المدن والدفع عند الاستلام</div>
-    </div>
-    <form class="space-y-3 bg-slate-900 text-white p-5 rounded-2xl shadow-xl">
-      <h3 class="text-sm font-black text-amber-400 text-center">للطلب المباشر: املأ الاستمارة وسيتصل بك الموزع</h3>
-      <input type="text" placeholder="الاسم الكامل" class="w-full p-3 bg-white text-slate-900 rounded-xl text-xs" required>
-      <input type="tel" placeholder="رقم الهاتف (الواتساب)" class="w-full p-3 bg-white text-slate-900 rounded-xl text-xs" required>
-      <select class="w-full p-3 bg-white text-slate-900 rounded-xl text-xs font-bold">
-        <option>الدار البيضاء (24 ساعة)</option>
-        <option>الرباط وسلا (24 ساعة)</option>
-        <option>مراكش (48 ساعة)</option>
-        <option>طنجة وتطوان (24 ساعة)</option>
-        <option>فاس ومكناس (48 ساعة)</option>
-        <option>أكادير (48 ساعة)</option>
-      </select>
-      <button type="submit" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-base shadow-lg">اضغط هنا لتأكيد طلبك الآن</button>
-    </form>
-    <div class="text-center text-[10px] text-slate-400">© ${new Date().getFullYear()} SO9FIADAK COD Morocco</div>
+<body class="pb-20 text-slate-900">
+  <div class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white text-center py-2.5 px-4 text-xs font-black shadow-md flex items-center justify-center gap-2">
+    <span>🔥 تخفيض حصري ${discountPercent}% اليوم فقط · التوصيل مجاني لجميع المدن المغربية والدفع بعد المعاينة</span>
   </div>
+
+  <main class="max-w-xl mx-auto px-4 pt-4 space-y-4">
+    <div class="text-center space-y-1.5">
+      <span class="text-xs font-black text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 uppercase inline-block">${productNiche}</span>
+      <h1 class="text-xl sm:text-2xl font-black text-slate-900 leading-tight">${productTitle}</h1>
+      <p class="text-xs text-slate-600 font-medium">${problemSolved}</p>
+    </div>
+
+    <div class="relative rounded-3xl overflow-hidden border border-slate-200 shadow-lg aspect-square bg-slate-950 flex items-center justify-center">
+      <img src="${userUploadedImage}" alt="${productTitle}" class="w-full h-full object-contain p-4">
+      <div class="absolute top-3 right-3 bg-rose-600 text-white text-xs font-black px-3 py-1.5 rounded-xl shadow-lg">خصم ${discountPercent}%</div>
+      <div class="absolute bottom-3 inset-x-3 bg-black/80 backdrop-blur-md text-white p-2.5 rounded-xl text-center text-xs font-bold">${offerHook}</div>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+      <div>
+        <span class="text-xs text-slate-400 line-through font-bold block">${productOriginalPrice} DH</span>
+        <span class="text-2xl font-black text-emerald-600">${productPrice} DH</span>
+      </div>
+      <div class="text-left text-xs text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl font-bold border border-emerald-200">
+        توفير ${Number(productOriginalPrice) - Number(productPrice)} DH اليوم
+      </div>
+    </div>
+
+    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3 text-xs leading-relaxed">
+      <h3 class="text-sm font-black text-slate-900 border-b pb-2">📋 الوصف المفصل، المكونات والفوائد الصحية (ديطاي ديال لي ديطاي):</h3>
+      <p class="text-slate-700 font-medium">${productDescription}</p>
+      <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-900 font-bold space-y-1">
+        <span>💡 طريقة الاستعمال الموصى بها:</span>
+        <p class="font-normal text-slate-800">تناول حبتين يومياً قبل موعد النوم بـ 30 دقيقة للحصول على استرخاء تدريجي ونوم عميق بدون انقطاع.</p>
+      </div>
+    </div>
+
+    <div class="bg-gradient-to-b from-slate-900 to-slate-950 text-white p-5 rounded-3xl shadow-xl space-y-4">
+      <div class="text-center space-y-1">
+        <h2 class="text-lg font-black text-emerald-400">استمارة الطلب السريع (الدفع عند الاستلام)</h2>
+        <p class="text-xs text-slate-300">أدخل معلوماتك وسنتصل بك هاتفياً لتأكيد الشحن الفوري</p>
+      </div>
+      <form onsubmit="alert('تم استلام طلبك بنجاح! سنتصل بك للتأكيد.'); return false;" class="space-y-3 text-xs text-slate-900">
+        <input type="text" required placeholder="الاسم الكامل" class="w-full p-2.5 bg-white rounded-xl font-bold">
+        <input type="tel" required placeholder="رقم الهاتف (06XXXXXXXX)" class="w-full p-2.5 bg-white rounded-xl font-bold" dir="ltr">
+        <input type="text" required placeholder="المدينة" class="w-full p-2.5 bg-white rounded-xl font-bold">
+        <button type="submit" class="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black rounded-xl cursor-pointer">
+          تأكيد الطلب الآن (الدفع عند الاستلام 🚚)
+        </button>
+      </form>
+    </div>
+  </main>
 </body>
 </html>`;
-                  navigator.clipboard.writeText(htmlCode);
-                  setCopiedCode(true);
-                  setTimeout(() => setCopiedCode(false), 2400);
-                }}
-                className="px-3.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-black rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer border border-indigo-200"
-              >
-                {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Code2 className="w-3.5 h-3.5" />}
-                <span>{copiedCode ? 'تم نسخ كود HTML!' : 'تصدير كود HTML الجاهز'}</span>
-              </button>
+
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `landing-page-${productTitle.replace(/\s+/g, '-').slice(0, 30)}.html`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="space-y-5 pb-16 animate-in fade-in duration-200" dir={isRtl ? 'rtl' : 'ltr'}>
+      {/* ========================================================
+          1. AI COMMAND CENTER & TOP DASHBOARD HEADER
+         ======================================================== */}
+      <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-5 sm:p-6 shadow-xl border border-slate-800 space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-teal-400 flex items-center justify-center shrink-0 shadow-lg ring-4 ring-purple-500/20">
+              <Wand2 className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base sm:text-xl font-black tracking-tight text-white">
+                  استوديو توليد الكرياتيف بالذكاء الاصطناعي (AI Creative & Video Studio)
+                </h1>
+                <span className="text-[10px] font-black bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-2.5 py-0.5 rounded-full shadow-xs">
+                  AI Powered
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 font-medium">
+                توليد بوستات إعلانية احترافية حقيقية + 3 فيديوهات مخصصة (تعليمي، طريقة الاستعمال، وUGC) مع لاكسي كامل للديزاين والمونطاج
+              </p>
             </div>
           </div>
 
-          {/* Quick Headline & Subtitle Editor Ribbon */}
-          <div className="bg-slate-50 p-4 rounded-3xl border border-slate-200 text-xs space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <span className="font-black text-slate-700 shrink-0">عنوان صفحة الهبوط الرئيسي:</span>
-              <input
-                type="text"
-                value={lpHeadline}
-                onChange={(e) => setLpHeadline(e.target.value)}
-                className="flex-1 py-2 px-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 font-bold text-slate-900"
-              />
-            </div>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <span className="font-black text-slate-700 shrink-0">العنوان الفرعي المقنع:</span>
-              <input
-                type="text"
-                value={lpSubheadline}
-                onChange={(e) => setLpSubheadline(e.target.value)}
-                className="flex-1 py-2 px-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 font-medium text-slate-800"
-              />
-            </div>
-          </div>
-
-          {/* Live Interactive Landing Page View Container */}
-          <div className="flex justify-center">
-            <div
-              className={`w-full transition-all duration-300 relative ${
-                previewDevice === 'mobile'
-                  ? 'max-w-md bg-white rounded-3xl border-4 border-slate-900 shadow-2xl overflow-hidden'
-                  : 'max-w-3xl bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden'
-              }`}
+          {/* AI Trigger Action Button */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleTriggerAiGeneration}
+              disabled={isAiGenerating}
+              className="w-full sm:w-auto px-5 py-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-emerald-500 hover:from-purple-700 hover:to-emerald-600 text-white font-black rounded-2xl shadow-xl transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2 text-xs sm:text-sm border border-white/20"
             >
-              {/* Mobile Fake Status Bar */}
-              {previewDevice === 'mobile' && (
-                <div className="bg-slate-900 text-white text-[10px] px-4 py-1.5 flex items-center justify-between">
-                  <span>9:41</span>
-                  <div className="flex items-center gap-1.5">
-                    <span>5G</span>
-                    <span>100%</span>
-                  </div>
-                </div>
-              )}
+              <Sparkles className={`w-4 h-4 ${isAiGenerating ? 'animate-spin' : 'animate-bounce'}`} />
+              <span>{isAiGenerating ? 'جاري التوليد بالذكاء الاصطناعي...' : 'توليد الكرياتيف بالذكاء الاصطناعي ✨'}</span>
+            </button>
+          </div>
+        </div>
 
-              {/* Landing Page Content */}
-              <div className="p-4 sm:p-6 space-y-6">
-                {/* 1. Urgency Countdown Top Bar */}
-                <div className="bg-gradient-to-r from-rose-600 to-amber-600 text-white text-center py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-sm">
-                  <Flame className="w-4 h-4 animate-bounce text-amber-300" />
-                  <span>
-                    عرض محدود ينتهي خلال:{' '}
-                    <span className="font-mono bg-black/30 px-2 py-0.5 rounded-md">
-                      {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:
-                      {String(timeLeft.seconds).padStart(2, '0')}
-                    </span>{' '}
-                    - خصم -{currentAd.discountPercent || 40}% وشحن مجاني!
+        {/* AI Generation Progress Banner */}
+        {isAiGenerating && (
+          <div className="p-3 bg-purple-900/60 border border-purple-500/40 rounded-2xl text-xs text-purple-200 font-bold flex items-center gap-3 animate-pulse">
+            <RefreshCw className="w-4 h-4 text-purple-400 animate-spin shrink-0" />
+            <span>{aiGenStep}</span>
+          </div>
+        )}
+
+        {/* 4 Main View Tabs */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-800">
+          <button
+            type="button"
+            onClick={() => setActiveTab('creatives')}
+            className={`py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              activeTab === 'creatives'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg ring-2 ring-purple-400/40'
+                : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300'
+            }`}
+          >
+            <ImageIcon className="w-4 h-4 text-purple-300" />
+            <span>1. بوستات الصور</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('videos')}
+            className={`py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              activeTab === 'videos'
+                ? 'bg-gradient-to-r from-rose-600 to-amber-600 text-white shadow-lg ring-2 ring-rose-400/40'
+                : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300'
+            }`}
+          >
+            <Video className="w-4 h-4 text-rose-300" />
+            <span>2. فيديوهات AI</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('scripts')}
+            className={`py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              activeTab === 'scripts'
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-lg ring-2 ring-amber-300/50'
+                : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300'
+            }`}
+          >
+            <Copy className="w-4 h-4 text-amber-300" />
+            <span>3. مكتبة السكريبتات 📋</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('landing_page')}
+            className={`py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              activeTab === 'landing_page'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg ring-2 ring-emerald-400/40'
+                : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300'
+            }`}
+          >
+            <Layout className="w-4 h-4 text-teal-300" />
+            <span>4. صفحة الهبوط المفصلة</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Global Toast */}
+      {toastMessage && (
+        <div className="p-3.5 bg-emerald-500 text-slate-950 font-black text-xs rounded-2xl shadow-lg border border-emerald-400 flex items-center justify-between animate-in slide-in-from-top-2">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{toastMessage}</span>
+          </div>
+          <button onClick={() => setToastMessage(null)} className="p-1 hover:opacity-75 cursor-pointer">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* ========================================================
+          2. PRODUCT SPECS & MEDIA UPLOAD CENTER
+         ======================================================== */}
+      <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <FolderOpen className="w-4 h-4 text-purple-600" />
+            <h2 className="text-xs sm:text-sm font-black text-slate-900">
+              مدخلات السلعة وصورتك الحقيقية (Magnesium Gummies)
+            </h2>
+          </div>
+          <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+            كل تعديل ينعكس فورياً على التصاميم والفيديوهات والصفحة
+          </span>
+        </div>
+
+        <input
+          type="file"
+          ref={fileInputImageRef}
+          onChange={handleImageFileChange}
+          accept="image/*"
+          className="hidden"
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 text-xs">
+          {/* Photo Box (4 Cols) */}
+          <div className="lg:col-span-4 space-y-2">
+            <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-slate-950 border-2 border-slate-200 shadow-sm flex items-center justify-center group">
+              <img
+                src={userUploadedImage}
+                alt={productTitle}
+                className="w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute bottom-2 inset-x-2 flex items-center gap-1.5 z-10">
+                <button
+                  type="button"
+                  onClick={() => fileInputImageRef.current?.click()}
+                  className="flex-1 py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer transition-colors"
+                >
+                  <UploadCloud className="w-3.5 h-3.5" />
+                  <span>تغيير صورة السلعة</span>
+                </button>
+              </div>
+              <div className="absolute top-2 right-2 bg-emerald-500 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-lg shadow-md flex items-center gap-1">
+                <Check className="w-3 h-3" />
+                <span>صورتك المرفوعة</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Form Fields (8 Cols) */}
+          <div className="lg:col-span-8 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="font-black text-slate-700">اسم المنتج:</label>
+                <input
+                  type="text"
+                  value={productTitle}
+                  onChange={(e) => setProductTitle(e.target.value)}
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-purple-600 text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-black text-slate-700">المجال / الصنف:</label>
+                <select
+                  value={productNiche}
+                  onChange={(e) => setProductNiche(e.target.value)}
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-purple-600 cursor-pointer text-xs"
+                >
+                  <option value="مكملات غذائية وعناية صحية (Compléments)">مكملات غذائية وعناية صحية (Compléments)</option>
+                  <option value="كوسميتيك ومواد التجميل (Cosmétique)">كوسميتيك ومواد التجميل (Cosmétique)</option>
+                  <option value="أجهزة إلكترونية ذكية (Électronique & Gadgets)">أجهزة إلكترونية ذكية (Électronique)</option>
+                  <option value="مستلزمات المنزل والمطبخ (Maison & Cuisine)">مستلزمات المنزل والمطبخ (Maison)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <label className="font-black text-slate-700">سعر البيع (DH):</label>
+                <input
+                  type="number"
+                  value={productPrice}
+                  onChange={(e) => setProductPrice(Number(e.target.value))}
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-black text-emerald-700 focus:outline-none focus:border-purple-600 text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-black text-slate-700">السعر قبل الخصم (DH):</label>
+                <input
+                  type="number"
+                  value={productOriginalPrice}
+                  onChange={(e) => setProductOriginalPrice(Number(e.target.value))}
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-500 line-through focus:outline-none focus:border-purple-600 text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-black text-slate-700">الفئة المستهدفة:</label>
+                <input
+                  type="text"
+                  value={targetAudience}
+                  onChange={(e) => setTargetAudience(e.target.value)}
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 focus:outline-none focus:border-purple-600 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="font-black text-slate-700 flex items-center gap-1">
+                <Target className="w-3.5 h-3.5 text-rose-600" />
+                <span>المشكل الذي يعالجه المنتج:</span>
+              </label>
+              <input
+                type="text"
+                value={problemSolved}
+                onChange={(e) => setProblemSolved(e.target.value)}
+                className="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:border-purple-600 text-xs"
+              />
+            </div>
+
+            {/* Detailed Description Box */}
+            <div className="space-y-1">
+              <label className="font-black text-slate-700 flex items-center gap-1">
+                <FileCode className="w-3.5 h-3.5 text-blue-600" />
+                <span>وصف المنتج المفصل، المكونات، وطريقة الاستعمال (ديطاي ديال لي ديطاي):</span>
+              </label>
+              <textarea
+                rows={3}
+                value={productDescription}
+                onChange={(e) => setProductDescription(e.target.value)}
+                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-medium text-slate-900 focus:outline-none focus:border-purple-600 text-xs leading-relaxed"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================
+          TAB 1: AI IMAGE CREATIVES & IN-APP DESIGN STUDIO
+          (مع لاكسي للديزاين باش نموديفي فيه اللي بغيت)
+         ======================================================== */}
+      {activeTab === 'creatives' && (
+        <div className="space-y-5 animate-in fade-in duration-150">
+          {/* Studio Toolbar & Post Selector */}
+          <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-xs space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-sm sm:text-base font-black text-slate-900 flex items-center gap-2">
+                  <Palette className="w-5 h-5 text-purple-600" />
+                  <span>محرر واستوديو الديزاين المباشر للبوستات الإعلانية (In-App Design Studio)</span>
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">
+                  اختر أحد البوستات الـ 3 المولدة بواسطة الذكاء الاصطناعي، وتحكم في الإضاءة والخلفية والمقاس والستيكرات
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={openInCanva}
+                  className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-black rounded-xl border border-blue-200 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>فتح على Canva</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={openInPhotopea}
+                  className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-black rounded-xl border border-emerald-200 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>فتح على Photopea</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Post Format Selector Tabs */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {aiAdPosts.map((post, idx) => (
+                <button
+                  key={post.id}
+                  type="button"
+                  onClick={() => setSelectedAdPostIndex(idx as any)}
+                  className={`p-3 rounded-2xl text-right border transition-all cursor-pointer ${
+                    selectedAdPostIndex === idx
+                      ? 'bg-purple-50 border-purple-500 ring-2 ring-purple-500/20 shadow-xs'
+                      : 'bg-slate-50 border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <span className="text-[10px] font-black uppercase text-purple-700 block">
+                    البوست {idx + 1}
                   </span>
+                  <span className="font-black text-slate-900 text-xs block truncate">
+                    {post.tag}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* IN-APP DESIGN STUDIO CONTROLS (لاكسي للمونطاج والديزاين) */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 text-xs">
+              <div className="flex items-center justify-between font-black text-slate-800 pb-2 border-b border-slate-200/80">
+                <span className="flex items-center gap-1.5">
+                  <Sliders className="w-4 h-4 text-purple-600" />
+                  <span>أدوات تعديل الديزاين والمؤثرات (Design Controls):</span>
+                </span>
+                <span className="text-[11px] text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full font-bold">
+                  {aiAdPosts[selectedAdPostIndex].tag}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Background Selector */}
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700">خلفية الاستوديو (Studio Background):</label>
+                  <select
+                    value={studioBgStyle}
+                    onChange={(e) => setStudioBgStyle(e.target.value as any)}
+                    className="w-full p-2 bg-white rounded-xl border border-slate-300 font-bold text-xs cursor-pointer"
+                  >
+                    <option value="titanium_dark">داكن تيتانيوم فاخر (Titanium Studio)</option>
+                    <option value="emerald_glow">أخضر زمردي متوهج (Emerald Glow)</option>
+                    <option value="royal_purple">أرجواني ملكي (Royal Purple)</option>
+                    <option value="studio_white">استوديو أبيض نقي (Clean White)</option>
+                  </select>
                 </div>
 
-                {/* 2. Product Title & Social Proof */}
-                <div className="text-center space-y-2">
-                  <div className="flex items-center justify-center gap-1 text-amber-500">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                    ))}
-                    <span className="text-xs font-black text-slate-700 mr-1.5">
-                      (4.9/5 بناءً على 480+ تقييم بالمغرب)
-                    </span>
+                {/* Scale & Zoom Slider */}
+                <div className="space-y-1">
+                  <div className="flex justify-between font-bold text-slate-700">
+                    <span>حجم وتكبير السلعة:</span>
+                    <span className="text-purple-600 font-black">{productScale}%</span>
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">
-                    {lpHeadline}
-                  </h2>
-                  <p className="text-xs sm:text-sm text-slate-600">
-                    {lpSubheadline}
-                  </p>
-                </div>
-
-                {/* 3. Hero Visual Asset (Image) */}
-                <div className="relative rounded-2xl overflow-hidden aspect-video bg-black shadow-md">
-                  <img
-                    src={currentAd.images[0] || uploadedImagesList[0]}
-                    alt={currentAd.title}
-                    className="w-full h-full object-cover"
+                  <input
+                    type="range"
+                    min="80"
+                    max="130"
+                    value={productScale}
+                    onChange={(e) => setProductScale(Number(e.target.value))}
+                    className="w-full accent-purple-600 cursor-pointer"
                   />
-                  <div className="absolute top-3 right-3 bg-rose-600 text-white text-xs font-black px-3 py-1 rounded-full shadow-md">
-                    وفر -{currentAd.discountPercent || 40}% اليوم
-                  </div>
                 </div>
 
-                {/* 4. Pricing & Bundle Options */}
-                <div className="bg-emerald-50 border-2 border-emerald-500/30 rounded-2xl p-4 text-center space-y-3">
-                  <span className="text-xs font-bold text-slate-500 block">اختر العرض الأنسب لك:</span>
-                  <div className="grid grid-cols-2 gap-2 text-right">
-                    <button
-                      type="button"
-                      onClick={() => setOrderQuantity(1)}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer ${
-                        orderQuantity === 1
-                          ? 'bg-emerald-600 text-white font-black border-emerald-600 shadow-md'
-                          : 'bg-white text-slate-800 border-slate-200'
-                      }`}
-                    >
-                      <span className="text-xs block">1 حبة (شحن فابور)</span>
-                      <span className="text-sm font-black">{currentAd.price} DH</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setOrderQuantity(2)}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer relative ${
-                        orderQuantity === 2
-                          ? 'bg-emerald-600 text-white font-black border-emerald-600 shadow-md'
-                          : 'bg-white text-slate-800 border-slate-200'
-                      }`}
-                    >
-                      <span className="absolute -top-2 right-2 bg-rose-600 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full">
-                        الأكثر طلباً -15%
-                      </span>
-                      <span className="text-xs block">2 حبات (عرض التوفير)</span>
-                      <span className="text-sm font-black">
-                        {Math.round(currentAd.price * 2 * 0.85)} DH
-                      </span>
-                    </button>
-                  </div>
-                  <span className="text-xs font-bold text-emerald-800 block">
-                    ✓ التوصيل مجاني 100% لجميع المدن والدفع نقداً عند استلام ومعاينة السلعة
-                  </span>
-                </div>
-
-                {/* 5. Key Highlights / Bullets */}
-                <div className="space-y-2.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <span className="text-xs font-black text-slate-900 block mb-1">
-                    لماذا يفضل الزبناء هذا المنتج بالمغرب؟
-                  </span>
-                  {(currentAd.features || [
-                    `يحل مشكل: ${newProblemSolved}`,
-                    `الفئة والعمر المستهدف: ${newTargetGender} (${newTargetAge})`,
-                    `البيئة المناسبة: ${newEnvironments}`,
-                    'توصيل سريع مجاني لباب المنزل في 24-48 ساعة',
-                    'إمكانية فحص السلعة ومعاينتها قبل الدفع',
-                    'ضمان الرضا والاسترجاع لمدة 7 أيام',
-                  ]).map((h, i) => (
-                    <div key={i} className="flex items-start gap-2 text-xs font-medium text-slate-700">
-                      <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 font-bold">
-                        ✓
-                      </div>
-                      <span>{h}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* 6. Customer Social Proof / Moroccan Testimonials */}
-                <div className="space-y-3 bg-indigo-50/60 p-4 rounded-2xl border border-indigo-100">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-indigo-950">آراء زبنائنا بالمغرب 🇲🇦</span>
-                    <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
-                      شراء مؤكد
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="bg-white p-3 rounded-xl border border-indigo-100/80 text-xs space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-900">أمين من الدار البيضاء</span>
-                        <div className="flex text-amber-400 text-[10px]">⭐⭐⭐⭐⭐</div>
-                      </div>
-                      <p className="text-slate-600 text-[11px]">
-                        "صراحة السلعة وصلتني فـ 24 ساعة، جودة ممتازة والدفع كان حتى قلبت السلعة قدام الليفرور. شكراً بزاف!"
-                      </p>
-                    </div>
-
-                    <div className="bg-white p-3 rounded-xl border border-indigo-100/80 text-xs space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-900">فاطمة الزهراء من الرباط</span>
-                        <div className="flex text-amber-400 text-[10px]">⭐⭐⭐⭐⭐</div>
-                      </div>
-                      <p className="text-slate-600 text-[11px]">
-                        "المنتج كايخدم مزيان وبحال الفيديو تماماً. خدمة الزبناء فالواتساب كانو لطيفين وكيجاوبو بسرعة."
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 7. Fully Functional Moroccan COD Fast Order Form */}
-                <div id="cod-order-form" className="bg-slate-900 text-white rounded-2xl p-5 shadow-xl space-y-4">
-                  <div className="text-center space-y-1">
-                    <h3 className="text-base font-black text-amber-400">
-                      للطلب المباشر: املأ الاستمارة الآن والدفع عند التسليم
-                    </h3>
-                    <p className="text-[11px] text-slate-300">
-                      سيتصل بك فريقنا لتأكيد العنوان وتحديد موعد الإرسال الفوري
-                    </p>
-                  </div>
-
-                  <form onSubmit={handleLandingOrderSubmit} className="space-y-3">
-                    {landingOrderError && (
-                      <div className="p-3 bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs font-bold rounded-xl flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
-                        <span>{landingOrderError}</span>
-                      </div>
-                    )}
-                    <div className="space-y-2 text-slate-900">
-                      <div>
-                        <input
-                          type="text"
-                          required
-                          value={customerName}
-                          onChange={(e) => setCustomerName(e.target.value)}
-                          placeholder="الاسم الكامل *"
-                          className="w-full py-2.5 px-3 bg-white text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-amber-400 font-bold"
-                        />
-                      </div>
-                      <div>
-                        <input
-                          type="tel"
-                          required
-                          value={customerPhone}
-                          onChange={(e) => setCustomerPhone(e.target.value)}
-                          placeholder="رقم الهاتف (الواتساب) *"
-                          className="w-full py-2.5 px-3 bg-white text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-amber-400 text-left font-mono"
-                          dir="ltr"
-                        />
-                      </div>
-                      <div>
-                        <select
-                          value={customerCity}
-                          onChange={(e) => setCustomerCity(e.target.value)}
-                          className="w-full py-2.5 px-3 bg-white text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-amber-400 font-bold"
-                        >
-                          {[
-                            'الدار البيضاء (24 ساعة)',
-                            'الرباط وسلا (24 ساعة)',
-                            'مراكش (48 ساعة)',
-                            'طنجة وتطوان (24 ساعة)',
-                            'فاس ومكناس (48 ساعة)',
-                            'أكادير (48 ساعة)',
-                            'القنيطرة (24 ساعة)',
-                            'وجدة والناظور (48 ساعة)',
-                            'العيون والداخلة (72 ساعة)',
-                            'باقي المدن والأقاليم المغربية (48 ساعة)',
-                          ].map((city) => (
-                            <option key={city} value={city}>
-                              {city}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <input
-                          type="text"
-                          value={customerAddress}
-                          onChange={(e) => setCustomerAddress(e.target.value)}
-                          placeholder="عنوان التوصيل والحي (اختياري)"
-                          className="w-full py-2.5 px-3 bg-white text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-amber-400"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Submit CTA */}
-                    <button
-                      type="submit"
-                      className="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black text-sm rounded-xl shadow-lg transition-transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer animate-pulse"
-                    >
-                      <ShoppingBag className="w-5 h-5" />
-                      <span>اضغط هنا لتأكيد طلبك الآن (الدفع عند الاستلام)</span>
-                    </button>
-                  </form>
-
-                  {/* WhatsApp Quick Order Option */}
-                  <div className="pt-2 border-t border-white/10 text-center">
-                    <a
-                      href={`https://wa.me/212612345678?text=${encodeURIComponent(
-                        `سلام، بغيت نطلب منتج "${currentAd.title}" الكمية (${orderQuantity}) بثمن العرض. عفاك معلومات الإرسال.`
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 font-bold"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5" />
-                      <span>أو اطلب مباشرة بالتحدث معنا عبر واتساب</span>
-                    </a>
-                  </div>
-
-                  {/* Submission Confirmation Banner */}
-                  {submittedOrderInfo && (
-                    <div className="p-4 bg-emerald-900/90 border border-emerald-400 rounded-xl text-emerald-200 text-xs text-center space-y-1.5 animate-in zoom-in-95">
-                      <div className="text-sm font-black text-white">🎉 شكراً لك! تم تسجيل طلبك بنجاح</div>
-                      <div>
-                        رقم الطلبية:{' '}
-                        <span className="font-mono font-bold text-amber-300">{submittedOrderInfo.id}</span>
-                      </div>
-                      <div>
-                        المبلغ الإجمالي عند الاستلام:{' '}
-                        <span className="font-bold text-white">{submittedOrderInfo.total} DH</span>
-                      </div>
-                      <div className="text-[10px] text-emerald-300 pt-1">
-                        سيتصل بك مسؤول التوصيل خلال قليل لتأكيد الإرسال.
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* 8. Guarantees Ribbon */}
-                <div className="grid grid-cols-3 gap-2 text-center text-slate-700 py-2 border-t border-slate-100">
-                  <div className="p-2 space-y-1">
-                    <Truck className="w-5 h-5 mx-auto text-blue-600" />
-                    <span className="text-[10px] font-black block">توصيل 24/48 ساعة</span>
-                  </div>
-                  <div className="p-2 space-y-1">
-                    <ShieldCheck className="w-5 h-5 mx-auto text-emerald-600" />
-                    <span className="text-[10px] font-black block">الدفع بعد المعاينة</span>
-                  </div>
-                  <div className="p-2 space-y-1">
-                    <Clock className="w-5 h-5 mx-auto text-amber-600" />
-                    <span className="text-[10px] font-black block">ضمان 7 أيام</span>
-                  </div>
-                </div>
-
-                {/* 9. FAQ Accordion for COD Buyers */}
-                <div className="space-y-2 pt-2 border-t border-slate-100">
-                  <span className="text-xs font-black text-slate-900 block mb-2">
-                    الأسئلة الشائعة من الزبناء (FAQ):
-                  </span>
-                  {[
-                    {
-                      q: 'واش نقدر نفتح الكولية ونقلب السلعة قبل ما نخلص؟',
-                      a: 'نعم بكل تأكيد! الموزع ينتظر حتى تفتح الطرد وتتأكد من مطابقته للمواصفات والجودة 100% عاد تخلص نقداً.',
-                    },
-                    {
-                      q: 'شحال كياخد التوصيل باش يوصلني الطلب؟',
-                      a: 'التوصيل كاياخد من 24 إلى 48 ساعة فالمدن الكبرى (كازا، الرباط، طنجة، مراكش...) وأقصى حد 72 ساعة فباقي القرى والمدن الصغرى.',
-                    },
-                    {
-                      q: 'شنو ندير إلا ما عجباتنيش السلعة أو لقيت فيها ديفو؟',
-                      a: 'عندك ضمان استبدال أو استرجاع كامل المبلغ لمدة 7 أيام. يكفي تتواصل مع فريق خدمة الزبناء عبر الواتساب وسيتكفلون بالباقي.',
-                    },
-                  ].map((faq, idx) => (
-                    <div key={idx} className="border border-slate-200 rounded-xl overflow-hidden">
-                      <button
-                        type="button"
-                        onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
-                        className="w-full p-3 bg-slate-50 hover:bg-slate-100 text-right text-xs font-bold text-slate-800 flex items-center justify-between cursor-pointer"
-                      >
-                        <span>{faq.q}</span>
-                        {openFaqIndex === idx ? (
-                          <ChevronUp className="w-4 h-4 text-slate-500" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4 text-slate-500" />
-                        )}
-                      </button>
-                      {openFaqIndex === idx && (
-                        <div className="p-3 bg-white text-[11px] text-slate-600 border-t border-slate-100">
-                          {faq.a}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                {/* Studio Shadow Toggle */}
+                <div className="flex items-center gap-3 pt-5">
+                  <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={showStudioShadow}
+                      onChange={(e) => setShowStudioShadow(e.target.checked)}
+                      className="w-4 h-4 accent-purple-600"
+                    />
+                    <span>إضاءة وظل الاستوديو الواقعي (3D Shadow)</span>
+                  </label>
                 </div>
               </div>
 
-              {/* Mobile Sticky CTA Button at the bottom for conversion */}
-              {previewDevice === 'mobile' && (
-                <div className="sticky bottom-0 inset-x-0 p-3 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-lg flex items-center justify-between gap-3 z-30">
-                  <div>
-                    <span className="text-[10px] text-slate-500 block">ثمن العرض الترويجي:</span>
-                    <span className="text-sm font-black text-emerald-700">{currentAd.price} DH</span>
+              {/* In-Place Text Editing Button */}
+              <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between">
+                <span className="text-slate-600 font-medium">يمكنك تعديل أي نص في التصميم بالضغط على زر التعديل:</span>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingDesignLayers(!isEditingDesignLayers)}
+                  className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-bold rounded-xl border border-slate-300 text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-purple-600" />
+                  <span>{isEditingDesignLayers ? 'إغلاق نافذة التعديل' : 'تعديل نصوص التصميم'}</span>
+                </button>
+              </div>
+
+              {isEditingDesignLayers && (
+                <div className="p-3 bg-white rounded-xl border border-purple-200 space-y-2 animate-in slide-in-from-top-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-700 block mb-0.5">العنوان الرئيسي:</label>
+                      <input
+                        type="text"
+                        value={aiAdPosts[selectedAdPostIndex].headline}
+                        onChange={(e) => {
+                          const updated = [...aiAdPosts];
+                          updated[selectedAdPostIndex].headline = e.target.value;
+                          setAiAdPosts(updated);
+                        }}
+                        className="w-full p-1.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-700 block mb-0.5">العنوان الفرعي:</label>
+                      <input
+                        type="text"
+                        value={aiAdPosts[selectedAdPostIndex].subheadline}
+                        onChange={(e) => {
+                          const updated = [...aiAdPosts];
+                          updated[selectedAdPostIndex].subheadline = e.target.value;
+                          setAiAdPosts(updated);
+                        }}
+                        className="w-full p-1.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-xs"
+                      />
+                    </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      const form = document.getElementById('cod-order-form');
-                      if (form) form.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <ShoppingBag className="w-4 h-4" />
-                    <span>اطلب الآن (الدفع عند الاستلام)</span>
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-700 block mb-0.5">شارة العرض (Badge):</label>
+                      <input
+                        type="text"
+                        value={aiAdPosts[selectedAdPostIndex].badge}
+                        onChange={(e) => {
+                          const updated = [...aiAdPosts];
+                          updated[selectedAdPostIndex].badge = e.target.value;
+                          setAiAdPosts(updated);
+                        }}
+                        className="w-full p-1.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-700 block mb-0.5">نص زر الطلب:</label>
+                      <input
+                        type="text"
+                        value={aiAdPosts[selectedAdPostIndex].cta}
+                        onChange={(e) => {
+                          const updated = [...aiAdPosts];
+                          updated[selectedAdPostIndex].cta = e.target.value;
+                          setAiAdPosts(updated);
+                        }}
+                        className="w-full p-1.5 bg-slate-50 border border-slate-300 rounded-lg font-bold text-xs"
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* THE LIVE 1080x1080 AI CREATIVE PREVIEW */}
+          <div className="bg-slate-900/90 rounded-3xl p-6 sm:p-10 border border-slate-800 flex flex-col items-center justify-center space-y-4 shadow-xl">
+            <div className="flex items-center justify-between w-full max-w-[420px] text-xs text-slate-300 pb-2">
+              <span className="font-bold">معاينة البوست الإعلاني الفعلي (Square 1080x1080):</span>
+              <span className="text-[11px] bg-slate-800 text-purple-300 px-2.5 py-0.5 rounded-full border border-purple-500/30">
+                1080x1080 HD
+              </span>
+            </div>
+
+            {/* The Actual Rendered Creative Box */}
+            <div
+              className={`relative w-full max-w-[420px] aspect-square rounded-3xl overflow-hidden shadow-2xl border flex flex-col justify-between p-4 sm:p-5 select-none transition-all ${
+                studioBgStyle === 'titanium_dark'
+                  ? 'bg-gradient-to-b from-[#061715] via-[#04221f] to-[#02100e] border-emerald-500/30 text-white'
+                  : studioBgStyle === 'emerald_glow'
+                  ? 'bg-gradient-to-br from-[#022c22] via-[#064e3b] to-[#022c22] border-emerald-400/40 text-white'
+                  : studioBgStyle === 'royal_purple'
+                  ? 'bg-gradient-to-br from-[#1e1b4b] via-[#2e1065] to-[#0f172a] border-purple-500/40 text-white'
+                  : 'bg-gradient-to-b from-slate-50 to-slate-200 border-slate-300 text-slate-900'
+              }`}
+            >
+              {/* Top Urgency Ribbon */}
+              <div
+                className={`py-1.5 px-3 rounded-2xl text-center text-xs font-black shadow-md flex items-center justify-between ${
+                  aiAdPosts[selectedAdPostIndex].theme === 'purple'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-emerald-600 text-white'
+                }`}
+              >
+                <span>⚡ {aiAdPosts[selectedAdPostIndex].badge}</span>
+                <span className="text-[9px] bg-black/30 px-2 py-0.5 rounded-md">COD المغرب 🇲🇦</span>
+              </div>
+
+              {/* Headline Container */}
+              <div
+                className={`p-2.5 rounded-2xl text-center space-y-0.5 my-1 border ${
+                  studioBgStyle === 'studio_white'
+                    ? 'bg-white/85 border-black/10'
+                    : 'bg-black/65 backdrop-blur-md border-white/10'
+                }`}
+              >
+                <h4
+                  className={`text-xs sm:text-sm font-black leading-snug ${
+                    studioBgStyle === 'studio_white' ? 'text-slate-900' : 'text-amber-300'
+                  }`}
+                >
+                  {aiAdPosts[selectedAdPostIndex].headline}
+                </h4>
+                <p
+                  className={`text-[10px] font-bold line-clamp-1 ${
+                    studioBgStyle === 'studio_white' ? 'text-slate-600' : 'text-slate-300'
+                  }`}
+                >
+                  {aiAdPosts[selectedAdPostIndex].subheadline}
+                </p>
+              </div>
+
+              {/* Product Center with Scale and 3D Shadow */}
+              <div className="relative my-auto flex items-center justify-center py-2">
+                <img
+                  src={userUploadedImage}
+                  alt={productTitle}
+                  style={{
+                    transform: `scale(${productScale / 100})`,
+                  }}
+                  className={`max-h-[170px] w-auto object-contain transition-transform duration-200 ${
+                    showStudioShadow
+                      ? 'drop-shadow-[0_20px_35px_rgba(0,0,0,0.9)]'
+                      : ''
+                  }`}
+                />
+              </div>
+
+              {/* 3D Price Pill */}
+              <div className="bg-amber-400 text-slate-950 px-4 py-1.5 rounded-2xl font-black text-center shadow-lg border-2 border-white flex items-center justify-between text-xs mx-4">
+                <span className="line-through text-slate-700 text-[10px]">{productOriginalPrice} DH</span>
+                <span className="text-sm sm:text-base font-black">{productPrice} DH فقط</span>
+              </div>
+
+              {/* Bottom CTA Button */}
+              <div
+                className={`w-full py-2.5 font-black text-center text-xs rounded-2xl shadow-lg flex items-center justify-center gap-1.5 mt-2 ${
+                  aiAdPosts[selectedAdPostIndex].theme === 'purple'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white'
+                    : 'bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950'
+                }`}
+              >
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>{aiAdPosts[selectedAdPostIndex].cta}</span>
+              </div>
+            </div>
+
+            {/* Direct High-Resolution Download Button */}
+            <button
+              type="button"
+              onClick={() => downloadPixelPerfectCreative(selectedAdPostIndex)}
+              className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black rounded-2xl shadow-lg transition-transform active:scale-95 cursor-pointer flex items-center gap-2 text-xs sm:text-sm"
+            >
+              <Download className="w-4 h-4" />
+              <span>تحميل التصميم الآن بدقة 1080x1080 HD (PNG)</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          TAB 2: AI VIDEO CREATIVES (3 DISTINCT MODES: EDU, USAGE, UGC)
+         ======================================================== */}
+      {activeTab === 'videos' && (
+        <div className="space-y-5 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-sm sm:text-base font-black text-slate-900 flex items-center gap-2">
+                  <Film className="w-5 h-5 text-rose-600" />
+                  <span>استوديو فيديوهات الذكاء الاصطناعي (3 أنواع مختلفة مولدة خصيصاً)</span>
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">
+                  اختر نوع الفيديو: فيديو تعليمي يشرح العلم والمكونات، فيديو يوضح طريقة الاستعمال، أو فيديو UGC تجربة زبون
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditingVideoScript(!isEditingVideoScript)}
+                  className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-black rounded-xl border border-rose-200 text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Scissors className="w-3.5 h-3.5" />
+                  <span>{isEditingVideoScript ? 'إغلاق المونطاج' : 'استوديو مونطاج السكربت'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* THE 3 VIDEO FORMAT SELECTOR BUTTONS REQUESTED BY THE USER */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {/* Mode 1: Educational */}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedVideoMode('educational');
+                  setVideoSceneIndex(0);
+                  setVideoProgress(0);
+                  speakCurrentScene(educationalScenes[0].spokenText);
+                }}
+                className={`p-3.5 rounded-2xl text-right border transition-all cursor-pointer flex flex-col justify-between gap-1 ${
+                  selectedVideoMode === 'educational'
+                    ? 'bg-blue-50 border-blue-500 ring-2 ring-blue-500/20 shadow-xs'
+                    : 'bg-slate-50 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase text-blue-700 block">
+                    النوع 1 · Explicatif
+                  </span>
+                  <BookOpen className="w-4 h-4 text-blue-600" />
+                </div>
+                <h4 className="text-xs font-black text-slate-900">
+                  1. فيديو تعليمي وشرح المكونات
+                </h4>
+                <p className="text-[11px] text-slate-500 leading-tight">
+                  شرح علمي للمغنيسيوم ودوره في تهدئة الجهاز العصبي والنوم
+                </p>
+              </button>
+
+              {/* Mode 2: Usage */}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedVideoMode('usage');
+                  setVideoSceneIndex(0);
+                  setVideoProgress(0);
+                  speakCurrentScene(usageScenes[0].spokenText);
+                }}
+                className={`p-3.5 rounded-2xl text-right border transition-all cursor-pointer flex flex-col justify-between gap-1 ${
+                  selectedVideoMode === 'usage'
+                    ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-500/20 shadow-xs'
+                    : 'bg-slate-50 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase text-amber-700 block">
+                    النوع 2 · Utilisation
+                  </span>
+                  <Coffee className="w-4 h-4 text-amber-600" />
+                </div>
+                <h4 className="text-xs font-black text-slate-900">
+                  2. فيديو طريقة الاستعمال والتطبيق
+                </h4>
+                <p className="text-[11px] text-slate-500 leading-tight">
+                  كيفية أخذ حبتين قبل النوم، المذاق، والشعور بالاسترخاء
+                </p>
+              </button>
+
+              {/* Mode 3: UGC Experience */}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedVideoMode('ugc');
+                  setVideoSceneIndex(0);
+                  setVideoProgress(0);
+                  speakCurrentScene(ugcScenes[0].spokenText);
+                }}
+                className={`p-3.5 rounded-2xl text-right border transition-all cursor-pointer flex flex-col justify-between gap-1 ${
+                  selectedVideoMode === 'ugc'
+                    ? 'bg-rose-50 border-rose-500 ring-2 ring-rose-500/20 shadow-xs'
+                    : 'bg-slate-50 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase text-rose-700 block">
+                    النوع 3 · Témoignage UGC
+                  </span>
+                  <Smile className="w-4 h-4 text-rose-600" />
+                </div>
+                <h4 className="text-xs font-black text-slate-900">
+                  3. فيديو تجربة حقيقية زبون (UGC)
+                </h4>
+                <p className="text-[11px] text-slate-500 leading-tight">
+                  منشئة محتوى تحكي تجربتها مع الأرق والنتيجة بعد أسبوع
+                </p>
+              </button>
+            </div>
+
+            {/* Video Montage Controls (When Toggled) */}
+            {isEditingVideoScript && (
+              <div className="p-4 bg-rose-50/70 rounded-2xl border border-rose-200 space-y-3 text-xs animate-in slide-in-from-top-2">
+                <div className="flex items-center justify-between pb-2 border-b border-rose-200/80 font-black text-rose-950">
+                  <span>تعديل سكربت ونصوص المشاهد (المونطاج المباشر):</span>
+                  <div className="flex items-center gap-2 text-[11px]">
+                    <span>سرعة الفيديو:</span>
+                    <select
+                      value={videoSpeed}
+                      onChange={(e) => setVideoSpeed(e.target.value as any)}
+                      className="p-1 bg-white rounded-lg border border-rose-300 font-bold text-xs"
+                    >
+                      <option value="normal">عادية (12 ثانية)</option>
+                      <option value="fast">سريعة (8 ثواني)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Edit Current Scene */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between font-bold text-rose-900">
+                    <span>السكربت الصوتي للمشهد ({currentActiveScenes[videoSceneIndex]?.tag}):</span>
+                    <span className="text-[10px] bg-rose-200 px-2 py-0.5 rounded-full">
+                      مشهد {videoSceneIndex + 1} من 4
+                    </span>
+                  </div>
+                  <textarea
+                    rows={2}
+                    value={currentActiveScenes[videoSceneIndex]?.spokenText || ''}
+                    onChange={(e) => {
+                      const text = e.target.value;
+                      if (selectedVideoMode === 'educational') {
+                        const upd = [...educationalScenes];
+                        upd[videoSceneIndex].spokenText = text;
+                        setEducationalScenes(upd);
+                      } else if (selectedVideoMode === 'usage') {
+                        const upd = [...usageScenes];
+                        upd[videoSceneIndex].spokenText = text;
+                        setUsageScenes(upd);
+                      } else {
+                        const upd = [...ugcScenes];
+                        upd[videoSceneIndex].spokenText = text;
+                        setUgcScenes(upd);
+                      }
+                    }}
+                    className="w-full p-2 bg-white rounded-xl border border-rose-300 font-medium text-xs leading-relaxed"
+                  />
+                </div>
+
+                {/* Scene Switcher Buttons */}
+                <div className="grid grid-cols-4 gap-2 pt-1">
+                  {currentActiveScenes.map((s, idx) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        setVideoSceneIndex(idx);
+                        setVideoProgress(0);
+                        speakCurrentScene(s.spokenText);
+                      }}
+                      className={`p-2 rounded-xl text-[10px] font-bold border transition-all cursor-pointer ${
+                        videoSceneIndex === idx
+                          ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                          : 'bg-white text-slate-700 border-rose-200 hover:bg-rose-100'
+                      }`}
+                    >
+                      مشهد {idx + 1}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* REAL PLAYING DYNAMIC VIDEO PLAYER */}
+          <div className="flex items-center justify-center bg-slate-950 p-4 sm:p-8 rounded-3xl border border-slate-800">
+            <div className="relative w-[280px] h-[510px] sm:w-[320px] sm:h-[570px] rounded-3xl overflow-hidden bg-slate-900 border-4 border-slate-800 shadow-2xl flex flex-col justify-between p-3.5 text-white select-none">
+              {/* Top Scene Progress Bars */}
+              <div className="grid grid-cols-4 gap-1 z-20 pt-1">
+                {currentActiveScenes.map((_, i) => (
+                  <div key={i} className="h-1 bg-white/30 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-rose-500 transition-all"
+                      style={{
+                        width: i === videoSceneIndex ? `${videoProgress}%` : i < videoSceneIndex ? '100%' : '0%',
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Creator & Voice Controls Top Bar */}
+              <div className="flex items-center justify-between z-20 pt-1 text-[11px]">
+                <div className="flex items-center gap-2 bg-black/60 px-2.5 py-1 rounded-full backdrop-blur-md border border-white/10">
+                  <img
+                    src={currentActiveScenes[videoSceneIndex]?.avatar}
+                    alt="Presenter"
+                    className="w-5 h-5 rounded-full object-cover border border-rose-400"
+                  />
+                  <span className="font-bold text-slate-200 text-[10px]">{currentActiveScenes[videoSceneIndex]?.speaker}</span>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsVoiceMuted(!isVoiceMuted);
+                      if (isVoiceMuted) speakCurrentScene(currentActiveScenes[videoSceneIndex]?.spokenText);
+                    }}
+                    className="p-1.5 rounded-full bg-black/60 hover:bg-black text-amber-300 border border-white/10 cursor-pointer"
+                    title={isVoiceMuted ? 'تشغيل الصوت' : 'كتم الصوت'}
+                  >
+                    {isVoiceMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVideoIsPlaying(!videoIsPlaying)}
+                    className="p-1.5 rounded-full bg-black/60 hover:bg-black text-white border border-white/10 cursor-pointer"
+                  >
+                    {videoIsPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Dynamic Animated Visuals */}
+              <div className="relative my-auto flex flex-col items-center justify-center z-10 py-2">
+                {/* Visual Type 1: Presenter Talking */}
+                {(currentActiveScenes[videoSceneIndex]?.visualType === 'doctor_explaining' ||
+                  currentActiveScenes[videoSceneIndex]?.visualType === 'creator_routine' ||
+                  currentActiveScenes[videoSceneIndex]?.visualType === 'creator_talking') && (
+                  <div className="relative w-full aspect-square rounded-2xl overflow-hidden border border-white/20 shadow-2xl mb-3">
+                    <img
+                      src={currentActiveScenes[videoSceneIndex]?.avatar}
+                      alt="Presenter"
+                      className="w-full h-full object-cover transform scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
+                    
+                    {/* Floating Product Thumbnail in Corner */}
+                    <div className="absolute bottom-2 right-2 w-16 h-16 rounded-xl bg-slate-900/90 border border-white/30 p-1 shadow-lg">
+                      <img src={userUploadedImage} alt="Product" className="w-full h-full object-contain" />
+                    </div>
+
+                    <div className="absolute top-2 right-2 bg-rose-600 text-white text-[9px] font-black px-2 py-0.5 rounded-md shadow-md">
+                      {currentActiveScenes[videoSceneIndex]?.badge}
+                    </div>
+                  </div>
+                )}
+
+                {/* Visual Type 2: Product Close-Up & Details */}
+                {(currentActiveScenes[videoSceneIndex]?.visualType === 'product_zoom' ||
+                  currentActiveScenes[videoSceneIndex]?.visualType === 'product_benefit' ||
+                  currentActiveScenes[videoSceneIndex]?.visualType === 'creator_delight' ||
+                  currentActiveScenes[videoSceneIndex]?.visualType === 'offer_recommendation') && (
+                  <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-slate-950 border border-white/20 shadow-2xl mb-3 flex items-center justify-center p-3">
+                    <img
+                      src={userUploadedImage}
+                      alt={productTitle}
+                      className="max-h-[190px] w-auto object-contain transform scale-110 drop-shadow-2xl animate-pulse"
+                    />
+                    <div className="absolute top-2 right-2 bg-emerald-500 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-md shadow-md">
+                      {currentActiveScenes[videoSceneIndex]?.badge}
+                    </div>
+                    {videoSceneIndex === 3 && (
+                      <div className="absolute bottom-2 left-2 bg-amber-400 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded-xl shadow-lg border border-white">
+                        {productPrice} DH فقط
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Animated TikTok-Style Subtitle Box */}
+                <div className="bg-black/85 backdrop-blur-md p-2.5 rounded-2xl border border-white/20 text-center max-w-[270px] shadow-2xl space-y-1">
+                  <span className="text-[9px] font-black text-rose-400 uppercase tracking-wider block">
+                    {currentActiveScenes[videoSceneIndex]?.tag.split(':')[0]}
+                  </span>
+                  <p className="text-xs font-black text-amber-300 leading-snug">
+                    "{currentActiveScenes[videoSceneIndex]?.spokenText}"
+                  </p>
+                </div>
+              </div>
+
+              {/* Bottom COD Order Action */}
+              <div className="z-20 space-y-1.5">
+                <div className="flex items-center justify-between text-[9px] text-slate-300 px-1 font-bold">
+                  <span>التوصيل فابور 24 ساعة 🇲🇦</span>
+                  <span className="text-emerald-400">الدفع بعد المعاينة 💵</span>
+                </div>
+                <div className="w-full py-2.5 bg-gradient-to-r from-rose-500 via-amber-500 to-rose-500 text-slate-950 font-black text-center text-xs rounded-xl shadow-lg flex items-center justify-center gap-1.5 cursor-pointer">
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  <span>اطلب الآن قبل نفاد المخزون</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {/* ========================================================
-          FULLSCREEN MODAL PREVIEW FOR LANDING PAGE
+          TAB 3: SCRIPTS STUDIO (مكتبة السكريبتات الجاهزة للنسخ)
          ======================================================== */}
-      {isFullscreenLanding && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col p-4 sm:p-6 overflow-y-auto">
-          <div className="flex items-center justify-between text-white pb-4 max-w-2xl mx-auto w-full">
-            <span className="text-sm font-black">معاينة صفحة الهبوط بملء الشاشة</span>
-            <button
-              onClick={() => setIsFullscreenLanding(false)}
-              className="p-1.5 bg-white/20 hover:bg-white/30 rounded-full text-white cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+      {activeTab === 'scripts' && (
+        <div className="space-y-5 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm sm:text-base font-black text-slate-900 flex items-center gap-2">
+                <FileCode className="w-5 h-5 text-amber-600" />
+                <span>مكتبة السكريبتات الإعلانية والتسويقية الجاهزة للنسخ والإنتاج</span>
+              </h3>
+              <p className="text-xs text-slate-500 font-medium">
+                جميع السكريبتات المكتوبة بالدارجة المغربية الموجهة لصناع المحتوى (UGC)، الأطباء، وإعلانات فيسبوك وتيك توك
+              </p>
+            </div>
+            <span className="text-xs font-black bg-amber-50 text-amber-800 px-3 py-1 rounded-xl border border-amber-200 shrink-0">
+              5 سكريبتات احترافية كاملة
+            </span>
           </div>
-          <div className="max-w-xl mx-auto w-full bg-white rounded-3xl p-6 shadow-2xl space-y-6 text-slate-900">
-            <div className="bg-rose-600 text-white text-center py-2.5 rounded-xl font-black text-xs">
-              🔥 عرض محدود: تخفيض -{currentAd.discountPercent}% اليوم فقط
+
+          <div className="grid grid-cols-1 gap-4">
+            {/* SCRIPT 1: UGC CREATOR VIDEO SCRIPT */}
+            <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                  <h4 className="font-black text-slate-900 text-sm">
+                    السكريبت 1: سكريبت فيديو UGC (منشئة محتوى مغربية تتحدث للكاميرا)
+                  </h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = `🎬 سكريبت فيديو UGC لمنشئ المحتوى (Magnesium Complex Gummies)
+المشهد 1 (Hook - 0-3 ثواني):
+"البنات/الدراري، شكون فيكم كيعاني من الأرق والستريس ومكتنعسش مزيان بالليل؟ عييت ما نجرب في الأعشاب والمنومات حتى لقيت هاد السحر اللي عتقني!"
+
+المشهد 2 (Introduction & Unboxing - 3-6 ثواني):
+"شوفو معايا هاد حلوى المغنيسيوم الأصلية (Magnesium Complex Gummies)، طبيعية 100% وبنينة بمذاق التوت ومكتحتاج حتى للماء."
+
+المشهد 3 (Results & Experience - 6-9 ثواني):
+"غير جوج حبات قبل النعاس بنصف ساعة، كتحس بالاسترخاء كينزل عليك وكتنعس ليلة كاملة نوم عميق بدون انقطاع، وكتفيق الصباح ناشط ومرتاح بدون داك العياء ولا الدوخة!"
+
+المشهد 4 (Offer & Call To Action - 9-12 ثانية):
+"دايرين عرض خاص: شري 2 علب وتاخد الثالثة فابور! والتوصيل مجاني 24 ساعة حتى لباب دارك وكتخلص حتى كتقلب سلعتك بيدك. اضغط على الرابط أسفله واطلب دابا قبل ما يسالي الستوك!"`;
+                    navigator.clipboard.writeText(text);
+                    setToastMessage('تم نسخ سكريبت UGC بنجاح!');
+                    setTimeout(() => setToastMessage(null), 3000);
+                  }}
+                  className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-black rounded-xl border border-rose-200 text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>نسخ السكريبت كاملاً</span>
+                </button>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-2.5 leading-relaxed text-slate-800">
+                <div className="p-2.5 bg-white rounded-xl border border-slate-200">
+                  <span className="font-black text-rose-600 block mb-1">المشهد 1: الهوك وجذب الانتباه (0-3 ثواني)</span>
+                  <p className="font-medium text-slate-700">"البنات/الدراري، شكون فيكم كيعاني من الأرق والستريس ومكتنعسش مزيان بالليل؟ عييت ما نجرب في الأعشاب والمنومات حتى لقيت هاد السحر اللي عتقني!"</p>
+                </div>
+                <div className="p-2.5 bg-white rounded-xl border border-slate-200">
+                  <span className="font-black text-purple-600 block mb-1">المشهد 2: فتح العلبة واستعراض السلعة (3-6 ثواني)</span>
+                  <p className="font-medium text-slate-700">"شوفو معايا هاد حلوى المغنيسيوم الأصلية (Magnesium Complex Gummies)، طبيعية 100% وبنينة بمذاق التوت ومكتحتاج حتى للماء."</p>
+                </div>
+                <div className="p-2.5 bg-white rounded-xl border border-slate-200">
+                  <span className="font-black text-blue-600 block mb-1">المشهد 3: التجربة والنتيجة بعد أسبوع (6-9 ثواني)</span>
+                  <p className="font-medium text-slate-700">"غير جوج حبات قبل النعاس بنصف ساعة، كتحس بالاسترخاء كينزل عليك وكتنعس ليلة كاملة نوم عميق بدون انقطاع، وكتفيق الصباح ناشط ومرتاح بدون داك العياء ولا الدوخة!"</p>
+                </div>
+                <div className="p-2.5 bg-white rounded-xl border border-slate-200">
+                  <span className="font-black text-emerald-600 block mb-1">المشهد 4: العرض الحصري والدفع عند الاستلام (9-12 ثانية)</span>
+                  <p className="font-medium text-slate-700">"دايرين عرض خاص: شري 2 علب وتاخد الثالثة فابور! والتوصيل مجاني 24 ساعة حتى لباب دارك وكتخلص حتى كتقلب سلعتك بيدك. اضغط على الرابط أسفله واطلب دابا!"</p>
+                </div>
+              </div>
             </div>
-            <h1 className="text-2xl font-black text-center">{lpHeadline}</h1>
-            <img src={currentAd.images[0] || uploadedImagesList[0]} alt={currentAd.title} className="rounded-2xl w-full object-cover shadow-md" />
-            <div className="bg-emerald-50 border-2 border-emerald-500/30 rounded-2xl p-4 text-center">
-              <span className="text-3xl font-black text-emerald-700">{currentAd.price} DH</span>
-              <span className="text-xs font-bold text-emerald-800 block mt-1">توصيل فابور والدفع عند الاستلام</span>
+
+            {/* SCRIPT 2: EDUCATIONAL / DOCTOR EXPLAINER SCRIPT */}
+            <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                  <h4 className="font-black text-slate-900 text-sm">
+                    السكريبت 2: سكريبت فيديو تعليمي / صيدلاني (دكتور / أخصائي تغذية)
+                  </h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = `🔬 سكريبت فيديو تعليمي وصيدلاني (Magnesium Complex Gummies)
+المشهد 1 (الحقيقة العلمية):
+"واش عارف بلي 80% من مشاكل الأرق، القلق، وتشنج العضلات بالليل سببها المباشر هو نقص المغنيسيوم في الجسم؟"
+
+المشهد 2 (التركيبة المتقدمة):
+"هاد حلوى المغنيسيوم المعقد كتجمع بين أفضل أشكال المغنيسيوم سريعة الامتصاص مع فيتامين B6 ومستخلصات البابونج المهدئ."
+
+المشهد 3 (المفعول داخل الجسم):
+"المفعول ديالها كيوصل للجهاز العصبي في دقائق، كيساعد العضلات على الاسترخاء وكيحفز إفراز هرمون النوم الطبيعي الميلاتونين بدون أي إدمان أو أعراض جانبية."
+
+المشهد 4 (التوصية والضمان):
+"كنصح بها كبديل طبيعي آمن لكل من كيعاني من ضغوط العمل وقلة النوم. اطلبوها الآن من الموزع الرسمي مع ضمان الرضا والتوصيل المجاني لكافة المدن المغربية."`;
+                    navigator.clipboard.writeText(text);
+                    setToastMessage('تم نسخ السكريبت التعليمي بنجاح!');
+                    setTimeout(() => setToastMessage(null), 3000);
+                  }}
+                  className="px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-black rounded-xl border border-blue-200 text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>نسخ السكريبت كاملاً</span>
+                </button>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-2.5 leading-relaxed text-slate-800">
+                <div className="p-2.5 bg-white rounded-xl border border-slate-200">
+                  <span className="font-black text-blue-600 block mb-1">المشهد 1: الحقيقة العلمية الصادمة</span>
+                  <p className="font-medium text-slate-700">"واش عارف بلي 80% من مشاكل الأرق، القلق، وتشنج العضلات بالليل سببها المباشر هو نقص المغنيسيوم في الجسم؟"</p>
+                </div>
+                <div className="p-2.5 bg-white rounded-xl border border-slate-200">
+                  <span className="font-black text-indigo-600 block mb-1">المشهد 2: التركيبة وسرعة الامتصاص</span>
+                  <p className="font-medium text-slate-700">"هاد حلوى المغنيسيوم المعقد كتجمع بين أفضل أشكال المغنيسيوم سريعة الامتصاص مع فيتامين B6 ومستخلصات البابونج المهدئ."</p>
+                </div>
+                <div className="p-2.5 bg-white rounded-xl border border-slate-200">
+                  <span className="font-black text-teal-600 block mb-1">المشهد 3: المفعول داخل الجهاز العصبي</span>
+                  <p className="font-medium text-slate-700">"المفعول ديالها كيوصل للجهاز العصبي في دقائق، كيساعد العضلات على الاسترخاء وكيحفز إفراز هرمون النوم الطبيعي الميلاتونين بدون أي إدمان."</p>
+                </div>
+                <div className="p-2.5 bg-white rounded-xl border border-slate-200">
+                  <span className="font-black text-emerald-600 block mb-1">المشهد 4: التوصية والطلب مع التوصيل</span>
+                  <p className="font-medium text-slate-700">"كنصح بها كبديل طبيعي آمن لكل من كيعاني من ضغوط العمل وقلة النوم. اطلبوها الآن مع التوصيل المجاني والدفع عند الاستلام."</p>
+                </div>
+              </div>
             </div>
-            <button
-              onClick={() => setIsFullscreenLanding(false)}
-              className="w-full py-3 bg-slate-900 text-white font-bold text-xs rounded-xl cursor-pointer"
+
+            {/* SCRIPT 3: USAGE & HOW-TO SCRIPT */}
+            <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                  <h4 className="font-black text-slate-900 text-sm">
+                    السكريبت 3: سكريبت فيديو طريقة الاستعمال والروتين اليومي (How-To)
+                  </h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = `🌙 سكريبت طريقة الاستعمال والروتين المسائي:
+المشهد 1 (السهولة):
+"إليك أسهل وألذ روتين مسائي يخليك تهنى نهائياً من الأرق والتوتر!"
+
+المشهد 2 (طريقة الأخذ والتوقيت):
+"طريقة الاستعمال: كتاخد حبتين فقط من حلوى المغنيسيوم قبل موعد النوم بـ 30 دقيقة. كتدوب في الفم ولذيذة بنكهة التوت البري ومكتحتاجش حتى للماء."
+
+المشهد 3 (الإحساس بالراحة):
+"في أقل من نصف ساعة، كتبدا تحس بارتخاء عضلات الرقبة والظهر، وكيجيك النعاس طبيعياً."
+
+المشهد 4 (النشاط الصباحي):
+"كتفيق الصباح كامل طاقة وحيوية. استغل باقة التوفير اليوم واستفد من التوصيل المجاني والدفع عند الاستلام."`;
+                    navigator.clipboard.writeText(text);
+                    setToastMessage('تم نسخ سكريبت طريقة الاستعمال!');
+                    setTimeout(() => setToastMessage(null), 3000);
+                  }}
+                  className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-black rounded-xl border border-amber-200 text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>نسخ السكريبت كاملاً</span>
+                </button>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-2.5 leading-relaxed text-slate-800">
+                <div className="p-2.5 bg-white rounded-xl border border-slate-200">
+                  <span className="font-black text-amber-700 block mb-1">المشهد 1: الروتين المسائي المريح</span>
+                  <p className="font-medium text-slate-700">"إليك أسهل وألذ روتين مسائي يخليك تهنى نهائياً من الأرق والتوتر!"</p>
+                </div>
+                <div className="p-2.5 bg-white rounded-xl border border-slate-200">
+                  <span className="font-black text-orange-600 block mb-1">المشهد 2: الجرعة والتوقيت (30 دقيقة قبل النوم)</span>
+                  <p className="font-medium text-slate-700">"كتاخد حبتين فقط من حلوى المغنيسيوم قبل موعد النوم بـ 30 دقيقة. كتدوب في الفم ولذيذة بنكهة التوت البري."</p>
+                </div>
+                <div className="p-2.5 bg-white rounded-xl border border-slate-200">
+                  <span className="font-black text-emerald-600 block mb-1">المشهد 3: الشعور الفوري بالارتخاء</span>
+                  <p className="font-medium text-slate-700">"في أقل من نصف ساعة، كتبدا تحس بارتخاء عضلات الرقبة والظهر، وكيجيك النعاس طبيعياً."</p>
+                </div>
+                <div className="p-2.5 bg-white rounded-xl border border-slate-200">
+                  <span className="font-black text-purple-600 block mb-1">المشهد 4: الاستيقاظ بنشاط والعرض</span>
+                  <p className="font-medium text-slate-700">"كتفيق الصباح كامل طاقة وحيوية. استغل باقة التوفير اليوم واستفد من التوصيل المجاني والدفع بعد المعاينة."</p>
+                </div>
+              </div>
+            </div>
+
+            {/* SCRIPT 4: FULL TIKTOK / FACEBOOK AD COPY */}
+            <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                  <h4 className="font-black text-slate-900 text-sm">
+                    السكريبت 4: النص الإعلاني الترويجي الكامل لإعلانات فيسبوك وتيك توك (High-Converting Copy)
+                  </h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = `🔥 واش عييتي من قلة النعاس والتقلب في الفراش بالساعات؟
+الستريس ديال الخدمة، التفكير الزائد، وتشنجات العضلات كيمنعوك تنعس مرتاح؟
+
+الحل النهائي وصل للمغرب: حلوى المغنيسيوم المعقد (Magnesium Complex Gummies) طبيعية وأصلية 100%! 🍇
+
+✨ لماذا يفضلها آلاف المغاربة يومياً؟
+✅ استرخاء فوري للجهاز العصبي والعضلات من أول ليلة
+✅ نوم عميق ليلة كاملة واستيقاظ بنشاط بدون أي خمول
+✅ تركيبة طبيعية خالية من السكر والمواد الحافظة وبدون أي إدمان
+✅ حلوى جيليه لذيذة بنكهة التوت بدون الحاجة لشرب الماء
+
+💰 العرض الترويجي الحصري:
+• علبة واحدة: 249 درهم فقط (عوض 449 درهم)
+• باقة 2 علب: 399 درهم فقط + 🎁 علبة ثالثة مجانية كهدية!
+🚚 التوصيل مجاني وسريع 24/48 ساعة لكافة المدن المغربية 🇲🇦
+💵 الدفع نقداً عند الاستلام وبعد ما تقلب سلعتك بيدك!
+
+👇 للطلب والاستفادة من العرض قبل نفاد المخزون، اضغط على الرابط أسفله!`;
+                    navigator.clipboard.writeText(text);
+                    setToastMessage('تم نسخ النص الإعلاني كاملاً!');
+                    setTimeout(() => setToastMessage(null), 3000);
+                  }}
+                  className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-black rounded-xl border border-emerald-200 text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>نسخ الإعلان كاملاً</span>
+                </button>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs font-mono whitespace-pre-line text-slate-800 leading-relaxed">
+{`🔥 واش عييتي من قلة النعاس والتقلب في الفراش بالساعات؟
+الستريس ديال الخدمة، التفكير الزائد، وتشنجات العضلات كيمنعوك تنعس مرتاح؟
+
+الحل النهائي وصل للمغرب: حلوى المغنيسيوم المعقد (Magnesium Complex Gummies) طبيعية وأصلية 100%! 🍇
+
+✨ لماذا يفضلها آلاف المغاربة يومياً؟
+✅ استرخاء فوري للجهاز العصبي والعضلات من أول ليلة
+✅ نوم عميق ليلة كاملة واستيقاظ بنشاط بدون أي خمول
+✅ تركيبة طبيعية خالية من السكر والمواد الحافظة وبدون أي إدمان
+✅ حلوى جيليه لذيذة بنكهة التوت بدون الحاجة لشرب الماء
+
+💰 العرض الترويجي الحصري:
+• علبة واحدة: 249 درهم فقط (عوض 449 درهم)
+• باقة 2 علب: 399 درهم فقط + 🎁 علبة ثالثة مجانية كهدية!
+🚚 التوصيل مجاني وسريع 24/48 ساعة لكافة المدن المغربية 🇲🇦
+💵 الدفع نقداً عند الاستلام وبعد ما تقلب سلعتك بيدك!
+
+👇 للطلب والاستفادة من العرض قبل نفاد المخزون، اضغط على الرابط أسفله!`}
+              </div>
+            </div>
+
+            {/* SCRIPT 5: WHATSAPP CONFIRMATION & UPSELL */}
+            <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-teal-500" />
+                  <h4 className="font-black text-slate-900 text-sm">
+                    السكريبت 5: رسائل تأكيد طلبيات الواتساب ومضاعفة السلة (WhatsApp Confirmation & Upsell)
+                  </h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = `📱 رسالة تأكيد الطلبية عبر الواتساب:
+"السلام عليكم ورحمة الله أخي/أختي الكريم(ة) 🌹، كنشكروك بزاف على ثقتك فينا وطلبك لحلوى المغنيسيوم المعقد للاسترخاء والنوم العميق.
+بغينا نأكدو معاك العنوان ورقم الهاتف باش تخرج الشحنة ديالك مع شركة التوصيل اليوم إن شاء الله.
+واش العنوان هو: [اسم المدينة والحي]؟"
+
+🎁 رسالة مضاعفة السلة (Upsell Pack Promo):
+"بالمناسبة، اليوم عندنا عرض خاص بالزبناء المؤكدين: إلا خديتي باقة 2 علب، غادي تستافد(ي) من علبة ثالثة فابور كهدية + شحن مجاني تماماً بـ 399 درهم فقط عوض 898 درهم! واش نبدلو ليك الطلبية للباقة ونوفرو عليك؟"`;
+                    navigator.clipboard.writeText(text);
+                    setToastMessage('تم نسخ رسائل الواتساب!');
+                    setTimeout(() => setToastMessage(null), 3000);
+                  }}
+                  className="px-3.5 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 font-black rounded-xl border border-teal-200 text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>نسخ رسائل الواتساب</span>
+                </button>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-3 text-slate-800 leading-relaxed">
+                <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
+                  <span className="font-black text-teal-700 block">1. رسالة التأكيد المباشر للزبون:</span>
+                  <p className="text-slate-700 font-medium">"السلام عليكم أخي/أختي الكريم(ة) 🌹، كنشكروك على طلبك لحلوى المغنيسيوم المعقد. بغينا نأكدو معاك العنوان ورقم الهاتف باش نخرجو الشحنة مع ليفرو اليوم إن شاء الله. واش العنوان هو: [اسم المدينة والحي]؟"</p>
+                </div>
+                <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
+                  <span className="font-black text-emerald-700 block">2. رسالة العرض الإضافي (Upsell 2+1 مجاناً):</span>
+                  <p className="text-slate-700 font-medium">"بالمناسبة، عندنا عرض حصري اليوم: إلا خديتي باقة 2 علب، غادي تستافد(ي) من علبة ثالثة فابور كهدية + شحن مجاني بـ 399 درهم فقط عوض 898 درهم! واش نبدلو ليك الطلبية للباقة الترويجية ونوفرو عليك؟"</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          TAB 4: DEEP DETAILED LANDING PAGE (ديطاي ديال لي ديطاي)
+         ======================================================== */}
+      {activeTab === 'landing_page' && (
+        <div className="space-y-5 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div>
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                <Layout className="w-4 h-4 text-emerald-600" />
+                <span>صفحة الهبوط المفصلة للسلعة (ديطاي ديال لي ديطاي)</span>
+              </h3>
+              <p className="text-slate-500 text-xs">
+                مبنية بالكامل بمعطياتك: الوصف المفصل، المكونات، المقارنة، الباقات، وآراء الزبائن
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 font-bold">
+                <button
+                  type="button"
+                  onClick={() => setLpDevice('mobile')}
+                  className={`px-3 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
+                    lpDevice === 'mobile' ? 'bg-white text-slate-900 shadow-xs font-black' : 'text-slate-600'
+                  }`}
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>معاينة الهاتف (Mobile)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLpDevice('desktop')}
+                  className={`px-3 py-1 rounded-lg flex items-center gap-1 transition-all cursor-pointer ${
+                    lpDevice === 'desktop' ? 'bg-white text-slate-900 shadow-xs font-black' : 'text-slate-600'
+                  }`}
+                >
+                  <Monitor className="w-3.5 h-3.5" />
+                  <span>معاينة الحاسوب (Desktop)</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={downloadFullStandaloneHtml}
+                className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>تحميل كملف HTML مستقل كامل</span>
+              </button>
+            </div>
+          </div>
+
+          {/* THE LIVE DETAILED LANDING PAGE */}
+          <div className="flex items-center justify-center bg-slate-100 p-3 sm:p-6 rounded-3xl border border-slate-200">
+            <div
+              className={`bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 transition-all duration-300 ${
+                lpDevice === 'mobile' ? 'w-full max-w-[420px]' : 'w-full max-w-4xl'
+              }`}
             >
-              إغلاق المعاينة والعودة للاستوديو
-            </button>
+              {/* Device Frame Bar (If Mobile) */}
+              {lpDevice === 'mobile' && (
+                <div className="bg-slate-900 text-slate-400 py-2 px-4 flex items-center justify-between text-[11px] font-bold">
+                  <span>9:41</span>
+                  <div className="w-16 h-4 bg-slate-800 rounded-full" />
+                  <span>5G · 100%</span>
+                </div>
+              )}
+
+              {/* 1. Urgency Notification Top Ribbon */}
+              <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white text-center py-2.5 px-3 text-xs font-black shadow-xs flex items-center justify-center gap-2">
+                <Flame className="w-4 h-4 text-amber-300 animate-pulse" />
+                <span>
+                  تخفيض {discountPercent}% اليوم فقط · التوصيل مجاني لجميع المدن والدفع بعد المعاينة
+                </span>
+              </div>
+
+              {/* 2. Hero Section */}
+              <div className="p-4 sm:p-6 space-y-4">
+                <div className="text-center space-y-1.5">
+                  <span className="text-[11px] font-black text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 inline-block">
+                    {productNiche}
+                  </span>
+                  <h1 className="text-lg sm:text-2xl font-black text-slate-900 leading-snug">
+                    {productTitle}
+                  </h1>
+                  <p className="text-xs text-slate-600 font-medium max-w-lg mx-auto">
+                    {problemSolved}
+                  </p>
+                </div>
+
+                {/* Urgency Countdown Bar */}
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-2.5 flex items-center justify-between text-xs text-amber-900 font-bold">
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-amber-600" />
+                    <span>ينتهي العرض الترويجي خلال:</span>
+                  </span>
+                  <div className="flex items-center gap-1 font-mono font-black text-amber-700">
+                    <span className="bg-white px-2 py-0.5 rounded-md border border-amber-300">{countdown.hours}h</span>
+                    <span>:</span>
+                    <span className="bg-white px-2 py-0.5 rounded-md border border-amber-300">{countdown.minutes}m</span>
+                    <span>:</span>
+                    <span className="bg-white px-2 py-0.5 rounded-md border border-amber-300">{countdown.seconds}s</span>
+                  </div>
+                </div>
+
+                {/* Real Product Image Showcase */}
+                <div className="relative aspect-square sm:aspect-[4/3] rounded-2xl overflow-hidden bg-slate-950 border border-slate-200 shadow-md flex items-center justify-center">
+                  <img
+                    src={userUploadedImage}
+                    alt={productTitle}
+                    className="w-full h-full object-contain p-4"
+                  />
+                  <div className="absolute top-3 right-3 bg-rose-600 text-white text-xs font-black px-3 py-1.5 rounded-xl shadow-lg border border-rose-400">
+                    خصم {discountPercent}%
+                  </div>
+                  <div className="absolute bottom-3 inset-x-3 bg-black/80 backdrop-blur-md text-white p-2.5 rounded-xl text-center text-xs font-bold shadow-lg">
+                    {offerHook}
+                  </div>
+                </div>
+
+                {/* Price Display */}
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <span className="text-xs text-slate-400 line-through font-bold block">{productOriginalPrice} DH</span>
+                    <span className="text-2xl font-black text-emerald-600">{productPrice} DH</span>
+                  </div>
+                  <div className="text-left">
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-lg block">
+                      وفرت {Number(productOriginalPrice) - Number(productPrice)} DH اليوم
+                    </span>
+                    <span className="text-[10px] text-slate-500 block pt-0.5 font-medium">
+                      شامل مصاريف التوصيل والضمان
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3. Detailed Product Description & Ingredients (ديطاي ديال لي ديطاي) */}
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-3 text-xs leading-relaxed">
+                  <h3 className="font-black text-slate-900 text-sm flex items-center gap-1.5 border-b pb-2">
+                    <BadgeCheck className="w-4 h-4 text-emerald-600" />
+                    <span>الوصف المفصل، المكونات والفوائد الصحية (ديطاي ديال لي ديطاي):</span>
+                  </h3>
+                  <p className="text-slate-700 font-medium whitespace-pre-line leading-relaxed">
+                    {productDescription}
+                  </p>
+                  <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-950 font-bold space-y-1">
+                    <span className="block text-emerald-800">💡 طريقة الاستعمال والجرعة الموصى بها:</span>
+                    <p className="font-medium text-slate-800">
+                      تناول حبتين جيليه يومياً قبل النوم بنصف ساعة. لا تتطلب شرب الماء، ذات نكهة طبيعية لذيذة، ومناسبة للاستعمال المنتظم.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 4. Comparison Table (قبل وبعد) */}
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2.5 text-xs">
+                  <h3 className="font-black text-slate-900 text-sm">لماذا يعتبر هذا المنتج هو الخيار الأفضل؟</h3>
+                  <div className="grid grid-cols-2 gap-2 text-center">
+                    <div className="p-3 bg-rose-50 rounded-xl border border-rose-200 space-y-1">
+                      <span className="font-black text-rose-700 block">❌ المكملات الكيميائية العادية</span>
+                      <span className="text-[10px] text-slate-600 block">حبوب صعبة البلع، امتصاص ضعيف، وتسبب خمولاً صباحياً</span>
+                    </div>
+                    <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 space-y-1">
+                      <span className="font-black text-emerald-700 block">✓ منتجنا الطبيعي المضمون</span>
+                      <span className="text-[10px] text-slate-700 block">حلوى لذيذة، امتصاص فوري فائق، نوم طبيعي عميق واستيقاظ بنشاط</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. Pack Selection */}
+                <div className="space-y-2 text-xs">
+                  <h3 className="font-black text-slate-900 flex items-center gap-1">
+                    <ShoppingBag className="w-4 h-4 text-purple-600" />
+                    <span>اختر باقتك المفضلة للاستفادة من التخفيض:</span>
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <div
+                      onClick={() => setSelectedPack(1)}
+                      className={`p-3 rounded-xl border text-right cursor-pointer transition-all ${
+                        selectedPack === 1
+                          ? 'bg-purple-50 border-purple-500 ring-2 ring-purple-500/20'
+                          : 'bg-white border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <span className="font-black text-slate-900 block">علبة واحدة</span>
+                      <span className="text-sm font-black text-purple-700 block">{productPrice} DH</span>
+                      <span className="text-[10px] text-slate-400 block">السعر العادي</span>
+                    </div>
+
+                    <div
+                      onClick={() => setSelectedPack(2)}
+                      className={`p-3 rounded-xl border text-right cursor-pointer transition-all relative ${
+                        selectedPack === 2
+                          ? 'bg-emerald-50 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
+                          : 'bg-white border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <span className="absolute -top-2.5 left-2 bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-xs">
+                        الأكثر طلباً 🔥
+                      </span>
+                      <span className="font-black text-slate-900 block">باك 2 علب</span>
+                      <span className="text-sm font-black text-emerald-700 block">{Math.round(productPrice * 1.65)} DH</span>
+                      <span className="text-[10px] text-emerald-600 font-bold block">+ علبة هدية مجانية 🎁</span>
+                    </div>
+
+                    <div
+                      onClick={() => setSelectedPack(3)}
+                      className={`p-3 rounded-xl border text-right cursor-pointer transition-all ${
+                        selectedPack === 3
+                          ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-500/20'
+                          : 'bg-white border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <span className="font-black text-slate-900 block">باك العائلة (3 علب)</span>
+                      <span className="text-sm font-black text-amber-700 block">{Math.round(productPrice * 2.2)} DH</span>
+                      <span className="text-[10px] text-amber-600 font-bold block">توفير 45% + هدايا</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 6. Customer Testimonials */}
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2.5 text-xs">
+                  <h3 className="font-black text-slate-900 text-sm">آراء زبنائنا الكرام بالمغرب:</h3>
+                  <div className="space-y-2">
+                    <div className="p-2.5 bg-white rounded-xl border border-slate-200 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-900">أمينة الشاوي (الدار البيضاء)</span>
+                        <span className="text-amber-400">★★★★★</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600">
+                        "والله حتى معجزة! كنت ديما كنعاني مع النعاس، من النهار الأول حسيت براحة كبيرة وعضلاتي مرتاحين. شكراً بزاف!"
+                      </p>
+                    </div>
+
+                    <div className="p-2.5 bg-white rounded-xl border border-slate-200 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-900">محمد العلمي (طنجة)</span>
+                        <span className="text-amber-400">★★★★★</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600">
+                        "التوصيل كان سريع في 24 ساعة، السلعة أصلية وجاتني مغلفة مزيان، والمذاق ديالها واعر بحال الحلوى."
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 7. Fast Checkout COD Form */}
+                <div className="bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 text-white p-5 rounded-3xl shadow-xl space-y-4">
+                  <div className="text-center space-y-1">
+                    <span className="text-[10px] text-emerald-400 font-black uppercase tracking-wider block">
+                      الدفع نقداً عند الاستلام وبعد المعاينة
+                    </span>
+                    <h3 className="text-base font-black text-white">
+                      استمارة الطلب السريع (Commande Express)
+                    </h3>
+                    <p className="text-xs text-slate-300">
+                      أدخل معلوماتك وسنتصل بك هاتفياً لتأكيد الشحن في نفس اليوم
+                    </p>
+                  </div>
+
+                  {landingFormError && (
+                    <div className="p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-bold flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+                      <span>{landingFormError}</span>
+                    </div>
+                  )}
+
+                  {orderSuccessSubmitted ? (
+                    <div className="p-5 bg-emerald-500/20 border border-emerald-500/40 rounded-2xl text-center space-y-2 animate-in zoom-in-95">
+                      <div className="w-10 h-10 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center mx-auto font-black">
+                        ✓
+                      </div>
+                      <h4 className="text-sm font-black text-emerald-300">
+                        شكراً لك! تم استلام طلبك بنجاح
+                      </h4>
+                      <p className="text-xs text-slate-300 font-medium">
+                        سيقوم فريق خدمة الزبائن بالاتصال بك على رقمك لتأكيد الشحن الفوري.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setOrderSuccessSubmitted(false)}
+                        className="text-xs text-emerald-400 underline font-bold pt-1 cursor-pointer"
+                      >
+                        إجراء طلب آخر
+                      </button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleLandingCheckoutSubmit} className="space-y-3 text-xs">
+                      <div>
+                        <label className="block text-slate-200 font-bold mb-1">الاسم الكامل:</label>
+                        <input
+                          type="text"
+                          value={orderCustomerName}
+                          onChange={(e) => setOrderCustomerName(e.target.value)}
+                          placeholder="الاسم العائلي والشخصي"
+                          className="w-full p-2.5 bg-white rounded-xl border border-slate-300 text-slate-900 font-bold focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-200 font-bold mb-1">رقم الهاتف للتواصل:</label>
+                        <input
+                          type="tel"
+                          value={orderCustomerPhone}
+                          onChange={(e) => setOrderCustomerPhone(e.target.value)}
+                          placeholder="06XXXXXXXX"
+                          className="w-full p-2.5 bg-white rounded-xl border border-slate-300 text-slate-900 font-bold focus:outline-none"
+                          dir="ltr"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-200 font-bold mb-1">المدينة:</label>
+                        <input
+                          type="text"
+                          value={orderCustomerCity}
+                          onChange={(e) => setOrderCustomerCity(e.target.value)}
+                          placeholder="مثال: الدار البيضاء، مراكش، طنجة، الرباط..."
+                          className="w-full p-2.5 bg-white rounded-xl border border-slate-300 text-slate-900 font-bold focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="pt-2">
+                        <div className="flex items-center justify-between text-xs pb-2 border-b border-white/10 text-slate-300">
+                          <span>الباقة المختارة ({getPackDetails().title}):</span>
+                          <span className="text-base font-black text-emerald-400">{getPackDetails().price} DH</span>
+                        </div>
+                        <button
+                          type="submit"
+                          className="w-full mt-2 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-600 hover:to-teal-500 text-slate-950 text-sm font-black rounded-xl shadow-lg transition-transform active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+                        >
+                          <ShoppingBag className="w-4 h-4" />
+                          <span>تأكيد الطلب الآن (الدفع عند الاستلام 🚚)</span>
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

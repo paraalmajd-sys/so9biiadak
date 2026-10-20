@@ -3,27 +3,28 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig } from 'vite';
 
-// Calculate appropriate base URL for deployment:
-// 1. If BASE_URL is explicitly provided (e.g. in GitHub Actions or custom domain), use it.
-// 2. If running inside GitHub Actions (GITHUB_REPOSITORY = "owner/repo"), use "/repo/".
-// 3. Fallback to relative path './' for local preview / standalone hosts.
-const getBase = () => {
+export default defineConfig(({ mode, command }) => {
+  // Determine base path:
+  // 1. Explicit BASE_URL from environment
+  // 2. GitHub Actions environment variable GITHUB_REPOSITORY (e.g. "owner/repo" -> "/repo/")
+  // 3. In production build for GitHub Pages, use "/so9biiadak/"
+  // 4. In development server, use "/"
+  let base = './';
+
   if (process.env.BASE_URL) {
     const b = process.env.BASE_URL;
-    return b.endsWith('/') ? b : `${b}/`;
-  }
-  if (process.env.GITHUB_REPOSITORY) {
+    base = b.endsWith('/') ? b : `${b}/`;
+  } else if (process.env.GITHUB_REPOSITORY) {
     const parts = process.env.GITHUB_REPOSITORY.split('/');
     if (parts.length > 1 && parts[1]) {
-      return `/${parts[1]}/`;
+      base = `/${parts[1]}/`;
     }
+  } else if (command === 'build' || mode === 'production') {
+    base = '/so9biiadak/';
   }
-  return './';
-};
 
-export default defineConfig(() => {
   return {
-    base: getBase(),
+    base,
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
@@ -37,10 +38,7 @@ export default defineConfig(() => {
       port: 3000,
       host: '0.0.0.0',
       allowedHosts: true as const,
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
   };
